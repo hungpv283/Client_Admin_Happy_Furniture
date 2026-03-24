@@ -283,6 +283,72 @@ export async function createProductWithImages(
   return requestMultipart<Product>("/Products/with-images", formData);
 }
 
+// ─── Product Variants ─────────────────────────────────────────────────────────
+
+export interface ProductVariant {
+  id: number;
+  productId: number;
+  colorName: string;
+  colorCode: string;
+  imageUrl: string | null;
+  price: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateProductVariantData {
+  productId: number;
+  colorName: string;
+  colorCode: string;
+  price: number;
+  isActive: boolean;
+}
+
+export interface UpdateProductVariantData {
+  colorName: string;
+  colorCode: string;
+  price: number;
+  isActive: boolean;
+}
+
+export async function getProductVariants(
+  productId: number,
+  pageNumber = 1,
+  pageSize = 50
+): Promise<PaginatedResponse<ProductVariant>> {
+  return request<PaginatedResponse<ProductVariant>>(
+    `/ProductVariants/product/${productId}?pageNumber=${pageNumber}&pageSize=${pageSize}`
+  );
+}
+
+export async function getProductVariantById(id: number): Promise<ProductVariant> {
+  return request<ProductVariant>(`/ProductVariants/${id}`);
+}
+
+export async function createProductVariant(
+  data: CreateProductVariantData
+): Promise<ProductVariant> {
+  return request<ProductVariant>("/ProductVariants", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateProductVariant(
+  id: number,
+  data: UpdateProductVariantData
+): Promise<ProductVariant> {
+  return request<ProductVariant>(`/ProductVariants/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteProductVariant(id: number): Promise<void> {
+  return request<void>(`/ProductVariants/${id}`, { method: "DELETE" });
+}
+
 export interface CreateCategoryWithImageData {
   name: string;
   parentId?: number | null;
