@@ -123,6 +123,10 @@ export async function deleteCategory(id: number): Promise<void> {
   return request<void>(`/Categories/${id}`, { method: "DELETE" });
 }
 
+export async function getRootCategories(): Promise<Category[]> {
+  return request<Category[]>("/Categories/root");
+}
+
 // ─── Products ────────────────────────────────────────────────────────────────
 
 export interface ProductImage {
