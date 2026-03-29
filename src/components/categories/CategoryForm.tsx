@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  getCategories,
+  getRootCategories,
   getCategoryById,
   createCategory,
   createCategoryWithImage,
@@ -37,8 +37,8 @@ export default function CategoryForm({ mode, categoryId }: Props) {
   const [fetching, setFetching] = useState(mode === "edit");
 
   useEffect(() => {
-    getCategories(1, 100)
-      .then((data) => setAllCategories(data.items))
+    getRootCategories()
+      .then((data) => setAllCategories(data))
       .catch(() => {});
   }, []);
 
