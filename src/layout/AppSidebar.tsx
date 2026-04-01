@@ -1,7 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "../context/SidebarContext";
 import { useAuth } from "../context/AuthContext";
@@ -40,6 +39,14 @@ const navItems: NavItem[] = [
     subItems: [
       { name: "Danh sách", path: "/products" },
       { name: "Thêm mới", path: "/products/create" },
+    ],
+  },
+  {
+    icon: <BoxCubeIcon />,
+    name: "Chất liệu",
+    subItems: [
+      { name: "Danh sách", path: "/materials" },
+      { name: "Thêm mới", path: "/materials/create" },
     ],
   },
 ];
