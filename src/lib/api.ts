@@ -159,6 +159,8 @@ export interface Product {
   createdAt: string;
   updatedAt: string;
   categories: Category[];
+  materials?: Material[];
+  materialIds?: number[];
   variants: unknown[];
   images: ProductImage[];
 }
@@ -180,8 +182,6 @@ export interface CreateProductData {
   name: string;
   slug: string;
   description: string;
-  price: number;
-  oldPrice?: number | null;
   dimensionsHeight?: number | null;
   dimensionsWidth?: number | null;
   dimensionsDepth?: number | null;
@@ -192,6 +192,7 @@ export interface CreateProductData {
   isFeatured: boolean;
   isActive: boolean;
   categoryIds: number[];
+  materialIds: number[];
   imageUrls: string[];
 }
 
@@ -247,8 +248,6 @@ export interface CreateProductWithImagesData {
   name: string;
   slug: string;
   description?: string;
-  price: number;
-  oldPrice?: number | null;
   dimensionsHeight?: number | null;
   dimensionsWidth?: number | null;
   dimensionsDepth?: number | null;
@@ -259,6 +258,7 @@ export interface CreateProductWithImagesData {
   isFeatured?: boolean;
   isActive?: boolean;
   categoryIds: number[];
+  materialIds: number[];
   images: File[];
 }
 
@@ -269,8 +269,6 @@ export async function createProductWithImages(
   formData.append("name", data.name);
   formData.append("slug", data.slug);
   if (data.description) formData.append("description", data.description);
-  formData.append("price", String(data.price));
-  if (data.oldPrice != null) formData.append("oldPrice", String(data.oldPrice));
   if (data.dimensionsHeight != null) formData.append("dimensionsHeight", String(data.dimensionsHeight));
   if (data.dimensionsWidth != null) formData.append("dimensionsWidth", String(data.dimensionsWidth));
   if (data.dimensionsDepth != null) formData.append("dimensionsDepth", String(data.dimensionsDepth));
@@ -280,8 +278,8 @@ export async function createProductWithImages(
   if (data.weight != null) formData.append("weight", String(data.weight));
   formData.append("isFeatured", data.isFeatured ? "true" : "false");
   formData.append("isActive", data.isActive !== false ? "true" : "false");
-  // categoryIds as comma-separated string (per API docs)
   formData.append("categoryIds", data.categoryIds.join(","));
+  formData.append("materialIds", data.materialIds.join(","));
   data.images.forEach((file) => formData.append("images", file));
 
   return requestMultipart<Product>("/Products/with-images", formData);
@@ -295,7 +293,7 @@ export interface ProductVariant {
   colorName: string;
   colorCode: string;
   imageUrl: string | null;
-  price: number;
+  price: number | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -305,14 +303,14 @@ export interface CreateProductVariantData {
   productId: number;
   colorName: string;
   colorCode: string;
-  price: number;
+  imageUrl?: string | null;
   isActive: boolean;
 }
 
 export interface UpdateProductVariantData {
   colorName: string;
   colorCode: string;
-  price: number;
+  imageUrl?: string | null;
   isActive: boolean;
 }
 
@@ -351,6 +349,27 @@ export async function updateProductVariant(
 
 export async function deleteProductVariant(id: number): Promise<void> {
   return request<void>(`/ProductVariants/${id}`, { method: "DELETE" });
+}
+
+export interface CreateProductVariantWithImageData {
+  productId: number;
+  colorName: string;
+  colorCode: string;
+  isActive: boolean;
+  image: File;
+}
+
+export async function createProductVariantWithImage(
+  data: CreateProductVariantWithImageData
+): Promise<ProductVariant> {
+  const formData = new FormData();
+  formData.append("productId", String(data.productId));
+  formData.append("colorName", data.colorName);
+  formData.append("colorCode", data.colorCode);
+  formData.append("isActive", data.isActive ? "true" : "false");
+  formData.append("image", data.image);
+
+  return requestMultipart<ProductVariant>("/ProductVariants/with-image", formData);
 }
 
 export interface CreateCategoryWithImageData {
@@ -421,4 +440,8 @@ export async function updateMaterial(
 
 export async function deleteMaterial(id: number): Promise<void> {
   return request<void>(`/Materials/${id}`, { method: "DELETE" });
+}
+
+export async function getActiveMaterials(): Promise<Material[]> {
+  return request<Material[]>("/Materials/active");
 }
