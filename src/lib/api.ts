@@ -371,3 +371,54 @@ export async function createCategoryWithImage(
 
   return requestMultipart<Category>("/Categories/with-image", formData);
 }
+
+// Materials
+
+export interface Material {
+  id: number;
+  name: string;
+  description: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MaterialPayload {
+  name: string;
+  description: string;
+  isActive: boolean;
+}
+
+export async function getMaterials(
+  pageNumber = 1,
+  pageSize = 10
+): Promise<PaginatedResponse<Material>> {
+  return request<PaginatedResponse<Material>>(
+    `/Materials?pageNumber=${pageNumber}&pageSize=${pageSize}`
+  );
+}
+
+export async function getMaterialById(id: number): Promise<Material> {
+  return request<Material>(`/Materials/${id}`);
+}
+
+export async function createMaterial(data: MaterialPayload): Promise<Material> {
+  return request<Material>("/Materials", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateMaterial(
+  id: number,
+  data: MaterialPayload
+): Promise<Material> {
+  return request<Material>(`/Materials/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteMaterial(id: number): Promise<void> {
+  return request<void>(`/Materials/${id}`, { method: "DELETE" });
+}
