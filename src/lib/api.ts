@@ -154,6 +154,9 @@ export interface Product {
   detail: string | null;
   deliveryInfo: string | null;
   weight: number | null;
+  deliveryHeight: number | null;
+  deliveryWidth: number | null;
+  deliveryDepth: number | null;
   isFeatured: boolean;
   isActive: boolean;
   createdAt: string;
@@ -189,6 +192,9 @@ export interface CreateProductData {
   detail?: string;
   deliveryInfo?: string;
   weight?: number | null;
+  deliveryHeight?: number | null;
+  deliveryWidth?: number | null;
+  deliveryDepth?: number | null;
   isFeatured: boolean;
   isActive: boolean;
   categoryIds: number[];
@@ -255,6 +261,9 @@ export interface CreateProductWithImagesData {
   detail?: string;
   deliveryInfo?: string;
   weight?: number | null;
+  deliveryHeight?: number | null;
+  deliveryWidth?: number | null;
+  deliveryDepth?: number | null;
   isFeatured?: boolean;
   isActive?: boolean;
   categoryIds: number[];
@@ -276,6 +285,9 @@ export async function createProductWithImages(
   if (data.detail) formData.append("detail", data.detail);
   if (data.deliveryInfo) formData.append("deliveryInfo", data.deliveryInfo);
   if (data.weight != null) formData.append("weight", String(data.weight));
+  if (data.deliveryHeight != null) formData.append("deliveryHeight", String(data.deliveryHeight));
+  if (data.deliveryWidth != null) formData.append("deliveryWidth", String(data.deliveryWidth));
+  if (data.deliveryDepth != null) formData.append("deliveryDepth", String(data.deliveryDepth));
   formData.append("isFeatured", data.isFeatured ? "true" : "false");
   formData.append("isActive", data.isActive !== false ? "true" : "false");
   formData.append("categoryIds", data.categoryIds.join(","));

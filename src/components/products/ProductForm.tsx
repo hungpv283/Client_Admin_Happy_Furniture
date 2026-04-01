@@ -46,6 +46,9 @@ export default function ProductForm({ mode, productId }: Props) {
   const [detail, setDetail] = useState("");
   const [deliveryInfo, setDeliveryInfo] = useState("");
   const [weight, setWeight] = useState("");
+  const [deliveryHeight, setDeliveryHeight] = useState("");
+  const [deliveryWidth, setDeliveryWidth] = useState("");
+  const [deliveryDepth, setDeliveryDepth] = useState("");
   const [isFeatured, setIsFeatured] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [selectedParentCategoryIds, setSelectedParentCategoryIds] = useState<number[]>([]);
@@ -80,6 +83,9 @@ export default function ProductForm({ mode, productId }: Props) {
         setDetail(product.detail || "");
         setDeliveryInfo(product.deliveryInfo || "");
         setWeight(product.weight != null ? String(product.weight) : "");
+        setDeliveryHeight(product.deliveryHeight != null ? String(product.deliveryHeight) : "");
+        setDeliveryWidth(product.deliveryWidth != null ? String(product.deliveryWidth) : "");
+        setDeliveryDepth(product.deliveryDepth != null ? String(product.deliveryDepth) : "");
         setIsFeatured(product.isFeatured);
         setIsActive(product.isActive);
         setSelectedParentCategoryIds(product.categories.filter((x) => x.parentId == null).map((x) => x.id));
@@ -133,6 +139,9 @@ export default function ProductForm({ mode, productId }: Props) {
           detail,
           deliveryInfo,
           weight: weight ? parseFloat(weight) : null,
+          deliveryHeight: deliveryHeight ? parseFloat(deliveryHeight) : null,
+          deliveryWidth: deliveryWidth ? parseFloat(deliveryWidth) : null,
+          deliveryDepth: deliveryDepth ? parseFloat(deliveryDepth) : null,
           isFeatured,
           isActive,
           categoryIds,
@@ -151,6 +160,9 @@ export default function ProductForm({ mode, productId }: Props) {
           detail,
           deliveryInfo,
           weight: weight ? parseFloat(weight) : null,
+          deliveryHeight: deliveryHeight ? parseFloat(deliveryHeight) : null,
+          deliveryWidth: deliveryWidth ? parseFloat(deliveryWidth) : null,
+          deliveryDepth: deliveryDepth ? parseFloat(deliveryDepth) : null,
           isFeatured,
           isActive,
           categoryIds,
@@ -270,7 +282,21 @@ export default function ProductForm({ mode, productId }: Props) {
 
             <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
               <h2 className="mb-5 font-semibold text-gray-800 dark:text-white/90">Thông tin giao hàng</h2>
-              <textarea value={deliveryInfo} onChange={(e) => setDeliveryInfo(e.target.value)} rows={3} placeholder="Thông tin giao hàng, thời gian, chính sách..." className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+              <div className="space-y-4">
+                <textarea value={deliveryInfo} onChange={(e) => setDeliveryInfo(e.target.value)} rows={3} placeholder="Thông tin giao hàng, thời gian, chính sách..." className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  {[
+                    { label: "Cao khi giao", value: deliveryHeight, set: setDeliveryHeight },
+                    { label: "Rộng khi giao", value: deliveryWidth, set: setDeliveryWidth },
+                    { label: "Sâu khi giao", value: deliveryDepth, set: setDeliveryDepth },
+                  ].map(({ label, value, set }) => (
+                    <div key={label}>
+                      <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">{label}</label>
+                      <input type="number" value={value} onChange={(e) => set(e.target.value)} min="0" step="0.1" placeholder="0" className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
