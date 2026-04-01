@@ -1,11 +1,13 @@
-"use client";
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+﻿"use client";
+
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
+  createProductVariant,
+  createProductVariantWithImage,
   getProductById,
   getProductVariantById,
-  createProductVariant,
   updateProductVariant,
 } from "@/lib/api";
 import type { Product } from "@/lib/api";
@@ -17,9 +19,12 @@ interface Props {
   variantId?: number;
 }
 
+type ImageMode = "url" | "file";
+
 export default function ProductVariantForm({ mode, productId, variantId }: Props) {
   const router = useRouter();
   const { success, error: toastError } = useToast();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [product, setProduct] = useState<Product | null>(null);
   const [fetching, setFetching] = useState(true);
@@ -27,7 +32,10 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
 
   const [colorName, setColorName] = useState("");
   const [colorCode, setColorCode] = useState("FFFFFF");
-  const [price, setPrice] = useState("");
+  const [imageMode, setImageMode] = useState<ImageMode>("url");
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState("");
   const [isActive, setIsActive] = useState(true);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -41,9 +49,10 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
 
         if (mode === "edit" && variantId) {
           const variantData = await getProductVariantById(variantId);
-          setColorName(variantData.colorName);
-          setColorCode(variantData.colorCode);
-          setPrice(String(variantData.price));
+          setColorName(variantData.colorName || "");
+          setColorCode((variantData.colorCode || "FFFFFF").replace("#", "").toUpperCase());
+          setImageUrl(variantData.imageUrl || "");
+          setImagePreview(variantData.imageUrl || "");
           setIsActive(variantData.isActive);
         }
       } catch (err: unknown) {
@@ -52,45 +61,85 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
         setFetching(false);
       }
     };
+
     load();
   }, [mode, productId, variantId, toastError]);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
+
     if (!colorName.trim()) newErrors.colorName = "Vui lòng nhập tên màu";
     if (!colorCode.trim()) newErrors.colorCode = "Vui lòng nhập mã màu";
-    else if (!/^[0-9A-Fa-f]{6}$/.test(colorCode.trim()))
+    else if (!/^[0-9A-Fa-f]{6}$/.test(colorCode.trim())) {
       newErrors.colorCode = "Mã màu phải gồm 6 ký tự HEX (VD: FF5733)";
-    if (!price) newErrors.price = "Vui lòng nhập giá";
-    else if (isNaN(Number(price)) || Number(price) < 0)
-      newErrors.price = "Giá không hợp lệ";
+    }
+
+    if (imageMode === "url" && imageUrl.trim() && imageUrl.trim().length > 500) {
+      newErrors.imageUrl = "URL ảnh không được vượt quá 500 ký tự";
+    }
+
+    if (imageMode === "file" && !imageFile) {
+      newErrors.imageFile = "Vui lòng chọn ảnh từ máy";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleImageModeSwitch = (modeValue: ImageMode) => {
+    setImageMode(modeValue);
+    setImageUrl("");
+    setImageFile(null);
+    setImagePreview("");
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.imageUrl;
+      delete next.imageFile;
+      return next;
+    });
+  };
+
+  const handleFileChange = (file: File | null) => {
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
+
     setSubmitting(true);
     try {
       if (mode === "create") {
-        await createProductVariant({
-          productId,
-          colorName: colorName.trim(),
-          colorCode: colorCode.trim().toUpperCase(),
-          price: Number(price),
-          isActive,
-        });
+        if (imageMode === "file" && imageFile) {
+          await createProductVariantWithImage({
+            productId,
+            colorName: colorName.trim(),
+            colorCode: colorCode.trim().toUpperCase(),
+            isActive,
+            image: imageFile,
+          });
+        } else {
+          await createProductVariant({
+            productId,
+            colorName: colorName.trim(),
+            colorCode: colorCode.trim().toUpperCase(),
+            imageUrl: imageUrl.trim() || undefined,
+            isActive,
+          });
+        }
         success("Thêm biến thể thành công");
       } else if (variantId) {
         await updateProductVariant(variantId, {
           colorName: colorName.trim(),
           colorCode: colorCode.trim().toUpperCase(),
-          price: Number(price),
+          imageUrl: imageMode === "url" ? imageUrl.trim() || undefined : undefined,
           isActive,
         });
         success("Cập nhật biến thể thành công");
       }
+
       router.push(`/products/${productId}/variants`);
     } catch (err: unknown) {
       toastError(err instanceof Error ? err.message : "Có lỗi xảy ra");
@@ -101,69 +150,59 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
 
   if (fetching) {
     return (
-      <div className="flex items-center justify-center min-h-[300px]">
-        <div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
+      <div className="flex min-h-[300px] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-500 border-t-transparent" />
       </div>
     );
   }
 
   return (
     <div>
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-6">
-        <Link href="/products" className="hover:text-brand-500 transition-colors">
+      <nav className="mb-6 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+        <Link href="/products" className="transition-colors hover:text-brand-500">
           Sản phẩm
         </Link>
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
-        <Link
-          href={`/products/${productId}/variants`}
-          className="hover:text-brand-500 transition-colors truncate max-w-[180px]"
-        >
+        <Link href={`/products/${productId}/variants`} className="max-w-[180px] truncate transition-colors hover:text-brand-500">
           {product ? product.name : `#${productId}`}
         </Link>
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
-        <Link
-          href={`/products/${productId}/variants`}
-          className="hover:text-brand-500 transition-colors"
-        >
+        <Link href={`/products/${productId}/variants`} className="transition-colors hover:text-brand-500">
           Biến thể
         </Link>
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
-        <span className="text-gray-800 dark:text-white/80 font-medium">
+        <span className="font-medium text-gray-800 dark:text-white/80">
           {mode === "create" ? "Thêm mới" : "Chỉnh sửa"}
         </span>
       </nav>
 
-      {/* Title */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90">
           {mode === "create" ? "Thêm biến thể" : "Chỉnh sửa biến thể"}
         </h1>
         {product && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Sản phẩm: <span className="font-medium text-gray-700 dark:text-gray-300">{product.name}</span>
           </p>
         )}
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main fields */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-6">
-              <h2 className="text-base font-semibold text-gray-800 dark:text-white/90 mb-5">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-2">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+              <h2 className="mb-5 text-base font-semibold text-gray-800 dark:text-white/90">
                 Thông tin biến thể
               </h2>
 
-              {/* Color Name */}
               <div className="mb-5">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Tên màu <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -171,33 +210,29 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
                   value={colorName}
                   onChange={(e) => setColorName(e.target.value)}
                   placeholder="VD: Xám nhạt, Xanh navy, ..."
-                  className={`w-full px-4 py-2.5 rounded-xl border text-sm bg-white dark:bg-white/5 dark:text-white/90 outline-none transition-colors
-                    ${errors.colorName
+                  className={`w-full rounded-xl border bg-white px-4 py-2.5 text-sm outline-none transition-colors dark:bg-white/5 dark:text-white/90 ${
+                    errors.colorName
                       ? "border-red-400 dark:border-red-500 focus:border-red-500"
                       : "border-gray-200 dark:border-gray-700 focus:border-brand-500 dark:focus:border-brand-500"
-                    }`}
+                  }`}
                 />
-                {errors.colorName && (
-                  <p className="mt-1 text-xs text-red-500">{errors.colorName}</p>
-                )}
+                {errors.colorName && <p className="mt-1 text-xs text-red-500">{errors.colorName}</p>}
               </div>
 
-              {/* Color Code */}
               <div className="mb-5">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Mã màu HEX <span className="text-red-500">*</span>
                 </label>
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center flex-1 gap-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 focus-within:border-brand-500 dark:focus-within:border-brand-500 transition-colors">
-                    <span className="text-sm text-gray-500 dark:text-gray-400 select-none">#</span>
+                  <div className="flex flex-1 items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 transition-colors focus-within:border-brand-500 dark:border-gray-700 dark:bg-white/5 dark:focus-within:border-brand-500">
+                    <span className="select-none text-sm text-gray-500 dark:text-gray-400">#</span>
                     <input
                       type="text"
                       value={colorCode}
-                      onChange={(e) => setColorCode(e.target.value.replace(/[^0-9A-Fa-f]/g, "").slice(0, 6))}
+                      onChange={(e) => setColorCode(e.target.value.replace(/[^0-9A-Fa-f]/g, "").slice(0, 6).toUpperCase())}
                       placeholder="FFFFFF"
                       maxLength={6}
-                      className={`flex-1 text-sm bg-transparent dark:text-white/90 outline-none uppercase tracking-widest
-                        ${errors.colorCode ? "placeholder:text-red-300" : ""}`}
+                      className={`flex-1 bg-transparent text-sm uppercase tracking-widest outline-none dark:text-white/90 ${errors.colorCode ? "placeholder:text-red-300" : ""}`}
                     />
                   </div>
                   <div className="relative flex-shrink-0">
@@ -210,120 +245,143 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
                     />
                     <label
                       htmlFor="colorPicker"
-                      className="w-11 h-11 rounded-xl border-2 border-gray-200 dark:border-gray-700 cursor-pointer block shadow-sm hover:scale-105 transition-transform"
+                      className="block h-11 w-11 cursor-pointer rounded-xl border-2 border-gray-200 shadow-sm transition-transform hover:scale-105 dark:border-gray-700"
                       style={{ backgroundColor: `#${colorCode.length === 6 ? colorCode : "FFFFFF"}` }}
                     />
                   </div>
                 </div>
-                {errors.colorCode && (
-                  <p className="mt-1 text-xs text-red-500">{errors.colorCode}</p>
-                )}
-                <p className="mt-1.5 text-xs text-gray-400">
-                  Nhập 6 ký tự HEX hoặc chọn màu bằng bộ chọn màu bên phải
-                </p>
+                {errors.colorCode && <p className="mt-1 text-xs text-red-500">{errors.colorCode}</p>}
+                <p className="mt-1.5 text-xs text-gray-400">Nhập 6 ký tự HEX hoặc chọn màu bên phải</p>
               </div>
 
-              {/* Price */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                  Giá biến thể (VND) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  placeholder="0"
-                  min={0}
-                  step="0.01"
-                  className={`w-full px-4 py-2.5 rounded-xl border text-sm bg-white dark:bg-white/5 dark:text-white/90 outline-none transition-colors
-                    ${errors.price
-                      ? "border-red-400 dark:border-red-500 focus:border-red-500"
-                      : "border-gray-200 dark:border-gray-700 focus:border-brand-500 dark:focus:border-brand-500"
-                    }`}
-                />
-                {errors.price && (
-                  <p className="mt-1 text-xs text-red-500">{errors.price}</p>
+                <div className="mb-2 flex items-center justify-between">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Ảnh biến thể</label>
+                  <div className="flex overflow-hidden rounded-lg border border-gray-200 text-xs dark:border-gray-700">
+                    <button
+                      type="button"
+                      onClick={() => handleImageModeSwitch("url")}
+                      className={`px-3 py-1.5 font-medium transition-colors ${
+                        imageMode === "url"
+                          ? "bg-brand-500 text-white"
+                          : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5"
+                      }`}
+                    >
+                      URL
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleImageModeSwitch("file")}
+                      className={`px-3 py-1.5 font-medium transition-colors ${
+                        imageMode === "file"
+                          ? "bg-brand-500 text-white"
+                          : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5"
+                      }`}
+                    >
+                      Từ máy
+                    </button>
+                  </div>
+                </div>
+
+                {imageMode === "url" ? (
+                  <div>
+                    <input
+                      type="text"
+                      value={imageUrl}
+                      onChange={(e) => {
+                        setImageUrl(e.target.value);
+                        setImagePreview(e.target.value);
+                      }}
+                      placeholder="https://example.com/variant.jpg"
+                      className={`w-full rounded-xl border bg-white px-4 py-2.5 text-sm outline-none transition-colors dark:bg-white/5 dark:text-white/90 ${
+                        errors.imageUrl
+                          ? "border-red-400 dark:border-red-500 focus:border-red-500"
+                          : "border-gray-200 dark:border-gray-700 focus:border-brand-500 dark:focus:border-brand-500"
+                      }`}
+                    />
+                    {errors.imageUrl && <p className="mt-1 text-xs text-red-500">{errors.imageUrl}</p>}
+                  </div>
+                ) : (
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      ref={fileInputRef}
+                      onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 py-8 text-sm text-gray-500 transition-colors hover:border-brand-400 hover:text-brand-500 dark:border-gray-600 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:text-brand-400"
+                    >
+                      <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                      {imageFile ? <span className="font-medium text-brand-500">{imageFile.name}</span> : <span>Nhấn để chọn ảnh từ máy</span>}
+                    </button>
+                    {mode === "edit" && (
+                      <p className="mt-1 text-xs text-amber-500">
+                        Chế độ sửa hiện đang cập nhật bằng `imageUrl`. Upload file chỉ dùng cho tạo mới.
+                      </p>
+                    )}
+                    {errors.imageFile && <p className="mt-1 text-xs text-red-500">{errors.imageFile}</p>}
+                  </div>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Sidebar */}
           <div className="space-y-6">
-            {/* Preview */}
-            <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-6">
-              <h2 className="text-base font-semibold text-gray-800 dark:text-white/90 mb-4">
-                Xem trước
-              </h2>
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+              <h2 className="mb-4 text-base font-semibold text-gray-800 dark:text-white/90">Xem trước</h2>
               <div className="flex flex-col items-center gap-3 py-4">
-                <div
-                  className="w-20 h-20 rounded-2xl border-2 border-gray-200 dark:border-gray-700 shadow-md transition-all"
-                  style={{ backgroundColor: `#${colorCode.length === 6 ? colorCode : "FFFFFF"}` }}
-                />
+                {imagePreview ? (
+                  <img
+                    src={imagePreview}
+                    alt="preview"
+                    className="h-24 w-24 rounded-2xl border border-gray-200 object-cover shadow-md dark:border-gray-700"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                ) : (
+                  <div
+                    className="h-20 w-20 rounded-2xl border-2 border-gray-200 shadow-md transition-all dark:border-gray-700"
+                    style={{ backgroundColor: `#${colorCode.length === 6 ? colorCode : "FFFFFF"}` }}
+                  />
+                )}
                 <div className="text-center">
-                  <p className="font-medium text-gray-800 dark:text-white/90 text-sm">
-                    {colorName || "Tên màu"}
-                  </p>
-                  <p className="text-xs text-gray-400 font-mono mt-0.5">
-                    #{colorCode.toUpperCase() || "FFFFFF"}
-                  </p>
-                  {price && (
-                    <p className="text-sm font-semibold text-brand-500 mt-1">
-                      {new Intl.NumberFormat("vi-VN", {
-                        style: "currency",
-                        currency: "VND",
-                      }).format(Number(price) || 0)}
-                    </p>
-                  )}
+                  <p className="text-sm font-medium text-gray-800 dark:text-white/90">{colorName || "Tên màu"}</p>
+                  <p className="mt-0.5 font-mono text-xs text-gray-400">#{colorCode.toUpperCase() || "FFFFFF"}</p>
                 </div>
               </div>
             </div>
 
-            {/* Status */}
-            <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-6">
-              <h2 className="text-base font-semibold text-gray-800 dark:text-white/90 mb-4">
-                Trạng thái
-              </h2>
-              <label className="flex items-center gap-3 cursor-pointer select-none">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+              <h2 className="mb-4 text-base font-semibold text-gray-800 dark:text-white/90">Trạng thái</h2>
+              <label className="flex cursor-pointer select-none items-center gap-3">
                 <div className="relative">
-                  <input
-                    type="checkbox"
-                    checked={isActive}
-                    onChange={(e) => setIsActive(e.target.checked)}
-                    className="sr-only"
-                  />
-                  <div
-                    className={`w-11 h-6 rounded-full transition-colors ${
-                      isActive ? "bg-brand-500" : "bg-gray-200 dark:bg-gray-700"
-                    }`}
-                  />
-                  <div
-                    className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
-                      isActive ? "translate-x-6" : "translate-x-1"
-                    }`}
-                  />
+                  <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="sr-only" />
+                  <div className={`h-6 w-11 rounded-full transition-colors ${isActive ? "bg-brand-500" : "bg-gray-200 dark:bg-gray-700"}`} />
+                  <div className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform ${isActive ? "translate-x-6" : "translate-x-1"}`} />
                 </div>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {isActive ? "Hoạt động" : "Ẩn"}
-                </span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{isActive ? "Hoạt động" : "Ẩn"}</span>
               </label>
             </div>
 
-            {/* Actions */}
-            <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-6 space-y-3">
+            <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 text-white text-sm font-medium hover:bg-brand-600 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {submitting && (
-                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                )}
+                {submitting && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />}
                 {mode === "create" ? "Thêm biến thể" : "Lưu thay đổi"}
               </button>
               <Link
                 href={`/products/${productId}/variants`}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
               >
                 Hủy
               </Link>
