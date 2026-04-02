@@ -140,23 +140,26 @@ export interface ProductImage {
   updatedAt: string;
 }
 
-export interface Product {
-  id: number;
-  name: string;
-  slug: string;
-  description: string;
-  price: number;
-  oldPrice: number | null;
-  dimensionsHeight: number | null;
-  dimensionsWidth: number | null;
-  dimensionsDepth: number | null;
-  dimensionUnit: string;
-  detail: string | null;
+export interface ProductDeliveryFields {
   deliveryInfo: string | null;
   weight: number | null;
   deliveryHeight: number | null;
   deliveryWidth: number | null;
   deliveryDepth: number | null;
+}
+
+export interface Product extends ProductDeliveryFields {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  price?: number | null;
+  oldPrice?: number | null;
+  dimensionsHeight: number | null;
+  dimensionsWidth: number | null;
+  dimensionsDepth: number | null;
+  dimensionUnit: string;
+  detail: string | null;
   isFeatured: boolean;
   isActive: boolean;
   createdAt: string;
@@ -181,7 +184,7 @@ export async function getProductById(id: number): Promise<Product> {
   return request<Product>(`/Products/${id}`);
 }
 
-export interface CreateProductData {
+export interface CreateProductData extends Partial<ProductDeliveryFields> {
   name: string;
   slug: string;
   description: string;
@@ -189,12 +192,7 @@ export interface CreateProductData {
   dimensionsWidth?: number | null;
   dimensionsDepth?: number | null;
   dimensionUnit: string;
-  detail?: string;
-  deliveryInfo?: string;
-  weight?: number | null;
-  deliveryHeight?: number | null;
-  deliveryWidth?: number | null;
-  deliveryDepth?: number | null;
+  detail?: string | null;
   isFeatured: boolean;
   isActive: boolean;
   categoryIds: number[];
@@ -250,7 +248,7 @@ async function requestMultipart<T>(
   return res.json();
 }
 
-export interface CreateProductWithImagesData {
+export interface CreateProductWithImagesData extends Partial<ProductDeliveryFields> {
   name: string;
   slug: string;
   description?: string;
@@ -258,12 +256,7 @@ export interface CreateProductWithImagesData {
   dimensionsWidth?: number | null;
   dimensionsDepth?: number | null;
   dimensionUnit?: string;
-  detail?: string;
-  deliveryInfo?: string;
-  weight?: number | null;
-  deliveryHeight?: number | null;
-  deliveryWidth?: number | null;
-  deliveryDepth?: number | null;
+  detail?: string | null;
   isFeatured?: boolean;
   isActive?: boolean;
   categoryIds: number[];
@@ -282,8 +275,8 @@ export async function createProductWithImages(
   if (data.dimensionsWidth != null) formData.append("dimensionsWidth", String(data.dimensionsWidth));
   if (data.dimensionsDepth != null) formData.append("dimensionsDepth", String(data.dimensionsDepth));
   if (data.dimensionUnit) formData.append("dimensionUnit", data.dimensionUnit);
-  if (data.detail) formData.append("detail", data.detail);
-  if (data.deliveryInfo) formData.append("deliveryInfo", data.deliveryInfo);
+  if (data.detail != null) formData.append("detail", data.detail);
+  if (data.deliveryInfo != null) formData.append("deliveryInfo", data.deliveryInfo);
   if (data.weight != null) formData.append("weight", String(data.weight));
   if (data.deliveryHeight != null) formData.append("deliveryHeight", String(data.deliveryHeight));
   if (data.deliveryWidth != null) formData.append("deliveryWidth", String(data.deliveryWidth));
