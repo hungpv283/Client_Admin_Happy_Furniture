@@ -63,9 +63,9 @@ export default function ProductForm({ mode, productId }: Props) {
   const [fetching, setFetching] = useState(mode === "edit");
 
   useEffect(() => {
-    getCategories(1, 100).then((data) => setAllCategories(data.items)).catch(() => {});
-    getRootCategories().then(setRootCategories).catch(() => {});
-    getActiveMaterials().then(setAllMaterials).catch(() => {});
+    getCategories(1, 100).then((data) => setAllCategories(data.items)).catch(() => { });
+    getRootCategories().then(setRootCategories).catch(() => { });
+    getActiveMaterials().then(setAllMaterials).catch(() => { });
   }, []);
 
   useEffect(() => {
@@ -317,7 +317,7 @@ export default function ProductForm({ mode, productId }: Props) {
             </div>
 
             <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-              <h2 className="mb-5 font-semibold text-gray-800 dark:text-white/90">Danh mục cha</h2>
+              <h2 className="mb-5 font-semibold text-gray-800 dark:text-white/90">Danh mục con</h2>
               <div className="max-h-64 space-y-1 overflow-y-auto">
                 {rootCategories.map((category) => (
                   <label key={category.id} className="flex cursor-pointer items-center gap-3 rounded-lg p-2 transition-colors hover:bg-gray-50 dark:hover:bg-white/5">
@@ -329,7 +329,7 @@ export default function ProductForm({ mode, productId }: Props) {
             </div>
 
             <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-              <h2 className="mb-5 font-semibold text-gray-800 dark:text-white/90">Danh mục con</h2>
+              <h2 className="mb-5 font-semibold text-gray-800 dark:text-white/90">Danh mục cha</h2>
               <div className="max-h-64 space-y-1 overflow-y-auto">
                 {childCategories.map((category) => (
                   <label key={category.id} className="flex cursor-pointer items-center gap-3 rounded-lg p-2 transition-colors hover:bg-gray-50 dark:hover:bg-white/5">
