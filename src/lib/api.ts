@@ -62,6 +62,7 @@ export interface Category {
   name: string;
   imageUrl: string | null;
   parentId: number | null;
+  sortOrder: number | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -79,12 +80,39 @@ export interface PaginatedResponse<T> {
   hasNextPage: boolean;
 }
 
+function buildQueryString(params: Record<string, string | number | boolean | null | undefined>): string {
+  const searchParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === "") return;
+    searchParams.append(key, String(value));
+  });
+
+  const query = searchParams.toString();
+  return query ? `?${query}` : "";
+}
+
+export interface CategoryFilters {
+  name?: string;
+  parentId?: number | null;
+  isActive?: boolean;
+  includeChildren?: boolean;
+}
+
 export async function getCategories(
   pageNumber = 1,
-  pageSize = 10
+  pageSize = 10,
+  filters: CategoryFilters = {}
 ): Promise<PaginatedResponse<Category>> {
   return request<PaginatedResponse<Category>>(
-    `/Categories?pageNumber=${pageNumber}&pageSize=${pageSize}`
+    `/Categories${buildQueryString({
+      PageNumber: pageNumber,
+      PageSize: pageSize,
+      Name: filters.name,
+      ParentId: filters.parentId,
+      IsActive: filters.isActive,
+      IncludeChildren: filters.includeChildren,
+    })}`
   );
 }
 
@@ -96,6 +124,7 @@ export async function createCategory(data: {
   name: string;
   imageUrl?: string;
   parentId?: number | null;
+  sortOrder?: number | null;
   isActive: boolean;
 }): Promise<Category> {
   return request<Category>("/Categories", {
@@ -110,6 +139,7 @@ export async function updateCategory(
     name: string;
     imageUrl?: string;
     parentId?: number | null;
+    sortOrder?: number | null;
     isActive: boolean;
   }
 ): Promise<Category> {
@@ -171,12 +201,35 @@ export interface Product extends ProductDeliveryFields {
   images: ProductImage[];
 }
 
+export interface ProductFilters {
+  name?: string;
+  slug?: string;
+  categoryId?: number;
+  materialId?: number;
+  isFeatured?: boolean;
+  isActive?: boolean;
+  sortBy?: string;
+  sortOrder?: string;
+}
+
 export async function getProducts(
   pageNumber = 1,
-  pageSize = 10
+  pageSize = 10,
+  filters: ProductFilters = {}
 ): Promise<PaginatedResponse<Product>> {
   return request<PaginatedResponse<Product>>(
-    `/Products?pageNumber=${pageNumber}&pageSize=${pageSize}`
+    `/Products${buildQueryString({
+      PageNumber: pageNumber,
+      PageSize: pageSize,
+      Name: filters.name,
+      Slug: filters.slug,
+      CategoryId: filters.categoryId,
+      MaterialId: filters.materialId,
+      IsFeatured: filters.isFeatured,
+      IsActive: filters.isActive,
+      SortBy: filters.sortBy,
+      SortOrder: filters.sortOrder,
+    })}`
   );
 }
 
@@ -380,6 +433,7 @@ export async function createProductVariantWithImage(
 export interface CreateCategoryWithImageData {
   name: string;
   parentId?: number | null;
+  sortOrder?: number | null;
   isActive: boolean;
   image: File;
 }
@@ -390,6 +444,7 @@ export async function createCategoryWithImage(
   const formData = new FormData();
   formData.append("name", data.name);
   if (data.parentId != null) formData.append("parentId", String(data.parentId));
+  if (data.sortOrder != null) formData.append("sortOrder", String(data.sortOrder));
   formData.append("isActive", data.isActive ? "true" : "false");
   formData.append("image", data.image);
 
@@ -413,12 +468,23 @@ export interface MaterialPayload {
   isActive: boolean;
 }
 
+export interface MaterialFilters {
+  name?: string;
+  isActive?: boolean;
+}
+
 export async function getMaterials(
   pageNumber = 1,
-  pageSize = 10
+  pageSize = 10,
+  filters: MaterialFilters = {}
 ): Promise<PaginatedResponse<Material>> {
   return request<PaginatedResponse<Material>>(
-    `/Materials?pageNumber=${pageNumber}&pageSize=${pageSize}`
+    `/Materials${buildQueryString({
+      PageNumber: pageNumber,
+      PageSize: pageSize,
+      Name: filters.name,
+      IsActive: filters.isActive,
+    })}`
   );
 }
 
