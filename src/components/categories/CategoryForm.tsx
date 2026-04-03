@@ -30,6 +30,7 @@ export default function CategoryForm({ mode, categoryId }: Props) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
   const [parentId, setParentId] = useState<number | "">("");
+  const [sortOrder, setSortOrder] = useState("");
   const [isActive, setIsActive] = useState(true);
 
   const [allCategories, setAllCategories] = useState<Category[]>([]);
@@ -51,12 +52,13 @@ export default function CategoryForm({ mode, categoryId }: Props) {
           setImageUrl(cat.imageUrl || "");
           setImagePreview(cat.imageUrl || "");
           setParentId(cat.parentId ?? "");
+          setSortOrder(cat.sortOrder != null ? String(cat.sortOrder) : "");
           setIsActive(cat.isActive);
         })
         .catch(() => toastError("Không thể tải thông tin danh mục"))
         .finally(() => setFetching(false));
     }
-  }, [mode, categoryId]);
+  }, [mode, categoryId, toastError]);
 
   const handleImageModeSwitch = (m: ImageMode) => {
     setImageMode(m);
@@ -77,6 +79,11 @@ export default function CategoryForm({ mode, categoryId }: Props) {
     setImagePreview(url);
   };
 
+  const isRootCategory = parentId === "";
+  const resolvedSortOrder = isRootCategory && sortOrder.trim() !== ""
+    ? Number(sortOrder)
+    : null;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -86,6 +93,7 @@ export default function CategoryForm({ mode, categoryId }: Props) {
         await createCategoryWithImage({
           name,
           parentId: parentId === "" ? null : Number(parentId),
+          sortOrder: resolvedSortOrder,
           isActive,
           image: imageFile,
         });
@@ -94,6 +102,7 @@ export default function CategoryForm({ mode, categoryId }: Props) {
           name,
           imageUrl: imageUrl || undefined,
           parentId: parentId === "" ? null : Number(parentId),
+          sortOrder: resolvedSortOrder,
           isActive,
         });
       } else {
@@ -101,6 +110,7 @@ export default function CategoryForm({ mode, categoryId }: Props) {
           name,
           imageUrl: imageUrl || undefined,
           parentId: parentId === "" ? null : Number(parentId),
+          sortOrder: resolvedSortOrder,
           isActive,
         });
       }
@@ -249,7 +259,13 @@ export default function CategoryForm({ mode, categoryId }: Props) {
               </label>
               <select
                 value={parentId}
-                onChange={(e) => setParentId(e.target.value === "" ? "" : Number(e.target.value))}
+                onChange={(e) => {
+                  const nextParentId = e.target.value === "" ? "" : Number(e.target.value);
+                  setParentId(nextParentId);
+                  if (nextParentId !== "") {
+                    setSortOrder("");
+                  }
+                }}
                 className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
               >
                 <option value="">Không có (danh mục gốc)</option>
@@ -259,6 +275,25 @@ export default function CategoryForm({ mode, categoryId }: Props) {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                Số thứ tự
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+                disabled={!isRootCategory}
+                placeholder={isRootCategory ? "Nhập số thứ tự cho danh mục gốc" : "Chỉ áp dụng cho danh mục cha"}
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500 dark:disabled:bg-white/[0.03] dark:disabled:text-gray-600"
+              />
+              <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                Category gốc có thể nhập số thứ tự. Category con sẽ luôn gửi `null`.
+              </p>
             </div>
 
             {/* Active toggle */}

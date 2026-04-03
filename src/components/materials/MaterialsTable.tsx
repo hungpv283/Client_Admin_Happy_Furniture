@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { deleteMaterial, getMaterials } from "@/lib/api";
-import type { Material } from "@/lib/api";
+import type { Material, MaterialFilters } from "@/lib/api";
 import { useToast } from "@/components/ui/toast/Toast";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
@@ -15,6 +15,11 @@ export default function MaterialsTable() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const pageSize = 10;
+  const [filters, setFilters] = useState({
+    name: "",
+    isActive: "",
+  });
+  const [appliedFilters, setAppliedFilters] = useState<MaterialFilters>({});
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
@@ -23,7 +28,7 @@ export default function MaterialsTable() {
   const fetchMaterials = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await getMaterials(page, pageSize);
+      const data = await getMaterials(page, pageSize, appliedFilters);
       setMaterials(data.items);
       setTotalPages(data.totalPages);
       setTotalCount(data.totalCount);
@@ -32,7 +37,7 @@ export default function MaterialsTable() {
     } finally {
       setLoading(false);
     }
-  }, [page, toastError]);
+  }, [appliedFilters, page, toastError]);
 
   useEffect(() => {
     fetchMaterials();
@@ -66,6 +71,23 @@ export default function MaterialsTable() {
     setDeleteTarget(null);
   };
 
+  const handleApplyFilters = () => {
+    setPage(1);
+    setAppliedFilters({
+      name: filters.name.trim() || undefined,
+      isActive: filters.isActive === "" ? undefined : filters.isActive === "true",
+    });
+  };
+
+  const handleClearFilters = () => {
+    setFilters({
+      name: "",
+      isActive: "",
+    });
+    setPage(1);
+    setAppliedFilters({});
+  };
+
   return (
     <div>
       <ConfirmDialog
@@ -94,6 +116,58 @@ export default function MaterialsTable() {
           </svg>
           Thêm chất liệu
         </Link>
+      </div>
+
+      <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="mb-4">
+          <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">Bộ lọc tìm kiếm</h2>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Lọc chất liệu theo tên và trạng thái.
+          </p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Tên chất liệu</label>
+            <input
+              type="text"
+              value={filters.name}
+              onChange={(e) => setFilters((prev) => ({ ...prev, name: e.target.value }))}
+              placeholder="Nhập tên chất liệu"
+              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Trạng thái</label>
+            <select
+              value={filters.isActive}
+              onChange={(e) => setFilters((prev) => ({ ...prev, isActive: e.target.value }))}
+              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+            >
+              <option value="">Tất cả</option>
+              <option value="true">Hoạt động</option>
+              <option value="false">Ẩn</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={handleApplyFilters}
+            className="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-600"
+          >
+            Lọc
+          </button>
+          <button
+            type="button"
+            onClick={handleClearFilters}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+          >
+            Xóa lọc
+          </button>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
