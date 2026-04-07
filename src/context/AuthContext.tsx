@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { LoginResponse } from "@/lib/api";
 
@@ -20,32 +20,28 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<LoginResponse["user"] | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [token, setToken] = useState<string | null>(() =>
+    typeof window !== "undefined" ? sessionStorage.getItem("hf_token") : null
+  );
+  const [user, setUser] = useState<LoginResponse["user"] | null>(() => {
+    if (typeof window === "undefined") return null;
+    const stored = sessionStorage.getItem("hf_user");
+    return stored ? JSON.parse(stored) : null;
+  });
+  const [isLoading] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    const storedToken = localStorage.getItem("hf_token");
-    const storedUser = localStorage.getItem("hf_user");
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
-  }, []);
-
   const login = (data: LoginResponse) => {
-    localStorage.setItem("hf_token", data.token);
-    localStorage.setItem("hf_user", JSON.stringify(data.user));
+    sessionStorage.setItem("hf_token", data.token);
+    sessionStorage.setItem("hf_user", JSON.stringify(data.user));
     setToken(data.token);
     setUser(data.user);
     router.push("/");
   };
 
   const logout = () => {
-    localStorage.removeItem("hf_token");
-    localStorage.removeItem("hf_user");
+    sessionStorage.removeItem("hf_token");
+    sessionStorage.removeItem("hf_user");
     setToken(null);
     setUser(null);
     router.push("/signin");
