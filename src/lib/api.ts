@@ -2,7 +2,7 @@ const BASE_URL = "https://happyfurniture-huexcrecemgaesdy.southeastasia-01.azure
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("hf_token");
+  return sessionStorage.getItem("hf_token");
 }
 
 async function request<T>(
@@ -60,6 +60,9 @@ export async function login(email: string, password: string): Promise<LoginRespo
 export interface Category {
   id: number;
   name: string;
+  nameEn: string | null;
+  description: string | null;
+  descriptionEn: string | null;
   imageUrl: string | null;
   parentId: number | null;
   sortOrder: number | null;
@@ -122,6 +125,9 @@ export async function getCategoryById(id: number): Promise<Category> {
 
 export async function createCategory(data: {
   name: string;
+  nameEn?: string;
+  description?: string;
+  descriptionEn?: string;
   imageUrl?: string;
   parentId?: number | null;
   sortOrder?: number | null;
@@ -137,6 +143,9 @@ export async function updateCategory(
   id: number,
   data: {
     name: string;
+    nameEn?: string;
+    description?: string;
+    descriptionEn?: string;
     imageUrl?: string;
     parentId?: number | null;
     sortOrder?: number | null;
@@ -170,8 +179,19 @@ export interface ProductImage {
   updatedAt: string;
 }
 
+export interface Assembly {
+  id: number;
+  name: string;
+  code: string;
+  description: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ProductDeliveryFields {
   deliveryInfo: string | null;
+  deliveryInfoEn: string | null;
   weight: number | null;
   deliveryHeight: number | null;
   deliveryWidth: number | null;
@@ -181,8 +201,10 @@ export interface ProductDeliveryFields {
 export interface Product extends ProductDeliveryFields {
   id: number;
   name: string;
+  nameEn: string | null;
   slug: string;
   description: string;
+  descriptionEn: string | null;
   price?: number | null;
   oldPrice?: number | null;
   dimensionsHeight: number | null;
@@ -190,8 +212,11 @@ export interface Product extends ProductDeliveryFields {
   dimensionsDepth: number | null;
   dimensionUnit: string;
   detail: string | null;
+  detailEn: string | null;
   isFeatured: boolean;
   isActive: boolean;
+  assemblyId: number | null;
+  assembly: Assembly | null;
   createdAt: string;
   updatedAt: string;
   categories: Category[];
@@ -239,15 +264,19 @@ export async function getProductById(id: number): Promise<Product> {
 
 export interface CreateProductData extends Partial<ProductDeliveryFields> {
   name: string;
+  nameEn?: string;
   slug: string;
   description: string;
+  descriptionEn?: string;
   dimensionsHeight?: number | null;
   dimensionsWidth?: number | null;
   dimensionsDepth?: number | null;
   dimensionUnit: string;
   detail?: string | null;
+  detailEn?: string | null;
   isFeatured: boolean;
   isActive: boolean;
+  assemblyId?: number | null;
   categoryIds: number[];
   materialIds: number[];
   imageUrls: string[];
@@ -303,15 +332,19 @@ async function requestMultipart<T>(
 
 export interface CreateProductWithImagesData extends Partial<ProductDeliveryFields> {
   name: string;
+  nameEn?: string;
   slug: string;
   description?: string;
+  descriptionEn?: string;
   dimensionsHeight?: number | null;
   dimensionsWidth?: number | null;
   dimensionsDepth?: number | null;
   dimensionUnit?: string;
   detail?: string | null;
+  detailEn?: string | null;
   isFeatured?: boolean;
   isActive?: boolean;
+  assemblyId?: number | null;
   categoryIds: number[];
   materialIds: number[];
   images: File[];
@@ -322,18 +355,23 @@ export async function createProductWithImages(
 ): Promise<Product> {
   const formData = new FormData();
   formData.append("name", data.name);
+  if (data.nameEn) formData.append("nameEn", data.nameEn);
   formData.append("slug", data.slug);
   if (data.description) formData.append("description", data.description);
+  if (data.descriptionEn) formData.append("descriptionEn", data.descriptionEn);
   if (data.dimensionsHeight != null) formData.append("dimensionsHeight", String(data.dimensionsHeight));
   if (data.dimensionsWidth != null) formData.append("dimensionsWidth", String(data.dimensionsWidth));
   if (data.dimensionsDepth != null) formData.append("dimensionsDepth", String(data.dimensionsDepth));
   if (data.dimensionUnit) formData.append("dimensionUnit", data.dimensionUnit);
   if (data.detail != null) formData.append("detail", data.detail);
+  if (data.detailEn != null) formData.append("detailEn", data.detailEn);
   if (data.deliveryInfo != null) formData.append("deliveryInfo", data.deliveryInfo);
+  if (data.deliveryInfoEn != null) formData.append("deliveryInfoEn", data.deliveryInfoEn);
   if (data.weight != null) formData.append("weight", String(data.weight));
   if (data.deliveryHeight != null) formData.append("deliveryHeight", String(data.deliveryHeight));
   if (data.deliveryWidth != null) formData.append("deliveryWidth", String(data.deliveryWidth));
   if (data.deliveryDepth != null) formData.append("deliveryDepth", String(data.deliveryDepth));
+  if (data.assemblyId != null) formData.append("assemblyId", String(data.assemblyId));
   formData.append("isFeatured", data.isFeatured ? "true" : "false");
   formData.append("isActive", data.isActive !== false ? "true" : "false");
   formData.append("categoryIds", data.categoryIds.join(","));
@@ -432,6 +470,9 @@ export async function createProductVariantWithImage(
 
 export interface CreateCategoryWithImageData {
   name: string;
+  nameEn?: string;
+  description?: string;
+  descriptionEn?: string;
   parentId?: number | null;
   sortOrder?: number | null;
   isActive: boolean;
@@ -443,6 +484,9 @@ export async function createCategoryWithImage(
 ): Promise<Category> {
   const formData = new FormData();
   formData.append("name", data.name);
+  if (data.nameEn) formData.append("nameEn", data.nameEn);
+  if (data.description) formData.append("description", data.description);
+  if (data.descriptionEn) formData.append("descriptionEn", data.descriptionEn);
   if (data.parentId != null) formData.append("parentId", String(data.parentId));
   if (data.sortOrder != null) formData.append("sortOrder", String(data.sortOrder));
   formData.append("isActive", data.isActive ? "true" : "false");
@@ -515,4 +559,59 @@ export async function deleteMaterial(id: number): Promise<void> {
 
 export async function getActiveMaterials(): Promise<Material[]> {
   return request<Material[]>("/Materials/active");
+}
+
+// ─── Assemblies ───────────────────────────────────────────────────────────────
+
+export interface AssemblyFilters {
+  name?: string;
+  isActive?: boolean;
+}
+
+export async function getAssemblies(
+  pageNumber = 1,
+  pageSize = 100,
+  filters: AssemblyFilters = {}
+): Promise<PaginatedResponse<Assembly>> {
+  return request<PaginatedResponse<Assembly>>(
+    `/Assemblies${buildQueryString({
+      PageNumber: pageNumber,
+      PageSize: pageSize,
+      Name: filters.name,
+      IsActive: filters.isActive,
+    })}`
+  );
+}
+
+export async function getAssemblyById(id: number): Promise<Assembly> {
+  return request<Assembly>(`/Assemblies/${id}`);
+}
+
+export interface AssemblyPayload {
+  name: string;
+  code: string;
+  description: string;
+  isActive: boolean;
+}
+
+export async function createAssembly(data: AssemblyPayload): Promise<Assembly> {
+  return request<Assembly>("/Assemblies", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateAssembly(id: number, data: AssemblyPayload): Promise<Assembly> {
+  return request<Assembly>(`/Assemblies/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteAssembly(id: number): Promise<void> {
+  return request<void>(`/Assemblies/${id}`, { method: "DELETE" });
+}
+
+export async function getActiveAssemblies(): Promise<Assembly[]> {
+  return request<Assembly[]>("/Assemblies/active");
 }

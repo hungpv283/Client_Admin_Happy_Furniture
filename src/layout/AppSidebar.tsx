@@ -49,6 +49,14 @@ const navItems: NavItem[] = [
       { name: "Thêm mới", path: "/materials/create" },
     ],
   },
+  {
+    icon: <BoxCubeIcon />,
+    name: "Assemblies",
+    subItems: [
+      { name: "Danh sách", path: "/assemblies" },
+      { name: "Thêm mới", path: "/assemblies/create" },
+    ],
+  },
 ];
 
 const AppSidebar: React.FC = () => {

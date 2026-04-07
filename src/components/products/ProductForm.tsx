@@ -7,12 +7,13 @@ import {
   createProduct,
   createProductWithImages,
   getActiveMaterials,
+  getActiveAssemblies,
   getCategories,
   getProductById,
   getRootCategories,
   updateProduct,
 } from "@/lib/api";
-import type { Category, Material } from "@/lib/api";
+import type { Assembly, Category, Material } from "@/lib/api";
 import { useToast } from "@/components/ui/toast/Toast";
 
 interface Props {
@@ -37,20 +38,25 @@ export default function ProductForm({ mode, productId }: Props) {
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const [name, setName] = useState("");
+  const [nameEn, setNameEn] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
+  const [descriptionEn, setDescriptionEn] = useState("");
   const [dimensionsHeight, setDimensionsHeight] = useState("");
   const [dimensionsWidth, setDimensionsWidth] = useState("");
   const [dimensionsDepth, setDimensionsDepth] = useState("");
   const [dimensionUnit, setDimensionUnit] = useState("cm");
   const [detail, setDetail] = useState("");
+  const [detailEn, setDetailEn] = useState("");
   const [deliveryInfo, setDeliveryInfo] = useState("");
+  const [deliveryInfoEn, setDeliveryInfoEn] = useState("");
   const [weight, setWeight] = useState("");
   const [deliveryHeight, setDeliveryHeight] = useState("");
   const [deliveryWidth, setDeliveryWidth] = useState("");
   const [deliveryDepth, setDeliveryDepth] = useState("");
   const [isFeatured, setIsFeatured] = useState(false);
   const [isActive, setIsActive] = useState(true);
+  const [assemblyId, setAssemblyId] = useState<number | "">("");
   const [selectedParentCategoryIds, setSelectedParentCategoryIds] = useState<number[]>([]);
   const [selectedChildCategoryIds, setSelectedChildCategoryIds] = useState<number[]>([]);
   const [selectedMaterialIds, setSelectedMaterialIds] = useState<number[]>([]);
@@ -59,6 +65,7 @@ export default function ProductForm({ mode, productId }: Props) {
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [rootCategories, setRootCategories] = useState<Category[]>([]);
   const [allMaterials, setAllMaterials] = useState<Material[]>([]);
+  const [allAssemblies, setAllAssemblies] = useState<Assembly[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(mode === "edit");
 
@@ -66,6 +73,7 @@ export default function ProductForm({ mode, productId }: Props) {
     getCategories(1, 100).then((data) => setAllCategories(data.items)).catch(() => { });
     getRootCategories().then(setRootCategories).catch(() => { });
     getActiveMaterials().then(setAllMaterials).catch(() => { });
+    getActiveAssemblies().then(setAllAssemblies).catch(() => { });
   }, []);
 
   useEffect(() => {
@@ -74,20 +82,25 @@ export default function ProductForm({ mode, productId }: Props) {
     getProductById(productId)
       .then((product) => {
         setName(product.name);
+        setNameEn(product.nameEn || "");
         setSlug(product.slug);
         setDescription(product.description || "");
+        setDescriptionEn(product.descriptionEn || "");
         setDimensionsHeight(product.dimensionsHeight != null ? String(product.dimensionsHeight) : "");
         setDimensionsWidth(product.dimensionsWidth != null ? String(product.dimensionsWidth) : "");
         setDimensionsDepth(product.dimensionsDepth != null ? String(product.dimensionsDepth) : "");
         setDimensionUnit(product.dimensionUnit || "cm");
         setDetail(product.detail || "");
+        setDetailEn(product.detailEn || "");
         setDeliveryInfo(product.deliveryInfo || "");
+        setDeliveryInfoEn(product.deliveryInfoEn || "");
         setWeight(product.weight != null ? String(product.weight) : "");
         setDeliveryHeight(product.deliveryHeight != null ? String(product.deliveryHeight) : "");
         setDeliveryWidth(product.deliveryWidth != null ? String(product.deliveryWidth) : "");
         setDeliveryDepth(product.deliveryDepth != null ? String(product.deliveryDepth) : "");
         setIsFeatured(product.isFeatured);
         setIsActive(product.isActive);
+        setAssemblyId(product.assemblyId ?? "");
         setSelectedParentCategoryIds(product.categories.filter((x) => x.parentId == null).map((x) => x.id));
         setSelectedChildCategoryIds(product.categories.filter((x) => x.parentId != null).map((x) => x.id));
         setSelectedMaterialIds(product.materials?.map((x) => x.id) ?? product.materialIds ?? []);
@@ -127,23 +140,29 @@ export default function ProductForm({ mode, productId }: Props) {
     const hasFiles = images.some((img) => img.mode === "file" && img.file);
 
     try {
+      const resolvedAssemblyId = assemblyId === "" ? null : Number(assemblyId);
       if (mode === "create" && hasFiles) {
         await createProductWithImages({
           name,
+          nameEn: nameEn || undefined,
           slug,
           description,
+          descriptionEn: descriptionEn || undefined,
           dimensionsHeight: dimensionsHeight ? parseFloat(dimensionsHeight) : null,
           dimensionsWidth: dimensionsWidth ? parseFloat(dimensionsWidth) : null,
           dimensionsDepth: dimensionsDepth ? parseFloat(dimensionsDepth) : null,
           dimensionUnit,
           detail,
+          detailEn: detailEn || undefined,
           deliveryInfo,
+          deliveryInfoEn: deliveryInfoEn || undefined,
           weight: weight ? parseFloat(weight) : null,
           deliveryHeight: deliveryHeight ? parseFloat(deliveryHeight) : null,
           deliveryWidth: deliveryWidth ? parseFloat(deliveryWidth) : null,
           deliveryDepth: deliveryDepth ? parseFloat(deliveryDepth) : null,
           isFeatured,
           isActive,
+          assemblyId: resolvedAssemblyId,
           categoryIds,
           materialIds: selectedMaterialIds,
           images: images.filter((img) => img.mode === "file" && img.file).map((img) => img.file!),
@@ -151,20 +170,25 @@ export default function ProductForm({ mode, productId }: Props) {
       } else {
         const payload = {
           name,
+          nameEn: nameEn || undefined,
           slug,
           description,
+          descriptionEn: descriptionEn || undefined,
           dimensionsHeight: dimensionsHeight ? parseFloat(dimensionsHeight) : null,
           dimensionsWidth: dimensionsWidth ? parseFloat(dimensionsWidth) : null,
           dimensionsDepth: dimensionsDepth ? parseFloat(dimensionsDepth) : null,
           dimensionUnit,
           detail,
+          detailEn: detailEn || undefined,
           deliveryInfo,
+          deliveryInfoEn: deliveryInfoEn || undefined,
           weight: weight ? parseFloat(weight) : null,
           deliveryHeight: deliveryHeight ? parseFloat(deliveryHeight) : null,
           deliveryWidth: deliveryWidth ? parseFloat(deliveryWidth) : null,
           deliveryDepth: deliveryDepth ? parseFloat(deliveryDepth) : null,
           isFeatured,
           isActive,
+          assemblyId: resolvedAssemblyId,
           categoryIds,
           materialIds: selectedMaterialIds,
           imageUrls: images.filter((img) => img.mode === "url" && img.url.trim()).map((img) => img.url.trim()),
@@ -202,21 +226,39 @@ export default function ProductForm({ mode, productId }: Props) {
             <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
               <h2 className="mb-5 font-semibold text-gray-800 dark:text-white/90">Thông tin cơ bản</h2>
               <div className="space-y-4">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Tên sản phẩm <span className="text-error-500">*</span></label>
-                  <input type="text" value={name} onChange={(e) => handleNameChange(e.target.value)} required placeholder="Nhập tên sản phẩm" className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Tên sản phẩm (VI) <span className="text-error-500">*</span></label>
+                    <input type="text" value={name} onChange={(e) => handleNameChange(e.target.value)} required placeholder="Nhập tên sản phẩm" className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Tên sản phẩm (EN)</label>
+                    <input type="text" value={nameEn} onChange={(e) => setNameEn(e.target.value)} placeholder="Product name in English" className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+                  </div>
                 </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Slug <span className="text-error-500">*</span></label>
                   <input type="text" value={slug} onChange={(e) => setSlug(e.target.value)} required placeholder="ten-san-pham" className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
                 </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Mô tả ngắn</label>
-                  <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="Mô tả ngắn về sản phẩm" className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Mô tả ngắn (VI)</label>
+                    <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="Mô tả ngắn về sản phẩm" className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Mô tả ngắn (EN)</label>
+                    <textarea value={descriptionEn} onChange={(e) => setDescriptionEn(e.target.value)} rows={3} placeholder="Short description in English" className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+                  </div>
                 </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Mô tả chi tiết</label>
-                  <textarea value={detail} onChange={(e) => setDetail(e.target.value)} rows={5} placeholder="Mô tả chi tiết về sản phẩm" className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Mô tả chi tiết (VI)</label>
+                    <textarea value={detail} onChange={(e) => setDetail(e.target.value)} rows={5} placeholder="Mô tả chi tiết về sản phẩm" className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Mô tả chi tiết (EN)</label>
+                    <textarea value={detailEn} onChange={(e) => setDetailEn(e.target.value)} rows={5} placeholder="Detailed description in English" className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -283,7 +325,16 @@ export default function ProductForm({ mode, productId }: Props) {
             <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
               <h2 className="mb-5 font-semibold text-gray-800 dark:text-white/90">Thông tin giao hàng</h2>
               <div className="space-y-4">
-                <textarea value={deliveryInfo} onChange={(e) => setDeliveryInfo(e.target.value)} rows={3} placeholder="Thông tin giao hàng, thời gian, chính sách..." className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Thông tin giao hàng (VI)</label>
+                    <textarea value={deliveryInfo} onChange={(e) => setDeliveryInfo(e.target.value)} rows={3} placeholder="Thông tin giao hàng, thời gian, chính sách..." className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Thông tin giao hàng (EN)</label>
+                    <textarea value={deliveryInfoEn} onChange={(e) => setDeliveryInfoEn(e.target.value)} rows={3} placeholder="Delivery information in English..." className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+                  </div>
+                </div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   {[
                     { label: "Cao khi giao", value: deliveryHeight, set: setDeliveryHeight },
@@ -314,6 +365,20 @@ export default function ProductForm({ mode, productId }: Props) {
                   </label>
                 ))}
               </div>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+              <h2 className="mb-5 font-semibold text-gray-800 dark:text-white/90">Lắp ráp (Assembly)</h2>
+              <select
+                value={assemblyId}
+                onChange={(e) => setAssemblyId(e.target.value === "" ? "" : Number(e.target.value))}
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+              >
+                <option value="">Không có</option>
+                {allAssemblies.map((a) => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
             </div>
 
             <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">

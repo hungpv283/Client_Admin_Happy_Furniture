@@ -25,6 +25,9 @@ export default function CategoryForm({ mode, categoryId }: Props) {
   const { success, error: toastError } = useToast();
 
   const [name, setName] = useState("");
+  const [nameEn, setNameEn] = useState("");
+  const [description, setDescription] = useState("");
+  const [descriptionEn, setDescriptionEn] = useState("");
   const [imageMode, setImageMode] = useState<ImageMode>("url");
   const [imageUrl, setImageUrl] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -49,6 +52,9 @@ export default function CategoryForm({ mode, categoryId }: Props) {
       getCategoryById(categoryId)
         .then((cat) => {
           setName(cat.name);
+          setNameEn(cat.nameEn || "");
+          setDescription(cat.description || "");
+          setDescriptionEn(cat.descriptionEn || "");
           setImageUrl(cat.imageUrl || "");
           setImagePreview(cat.imageUrl || "");
           setParentId(cat.parentId ?? "");
@@ -92,6 +98,9 @@ export default function CategoryForm({ mode, categoryId }: Props) {
       if (mode === "create" && imageMode === "file" && imageFile) {
         await createCategoryWithImage({
           name,
+          nameEn: nameEn || undefined,
+          description: description || undefined,
+          descriptionEn: descriptionEn || undefined,
           parentId: parentId === "" ? null : Number(parentId),
           sortOrder: resolvedSortOrder,
           isActive,
@@ -100,6 +109,9 @@ export default function CategoryForm({ mode, categoryId }: Props) {
       } else if (mode === "create") {
         await createCategory({
           name,
+          nameEn: nameEn || undefined,
+          description: description || undefined,
+          descriptionEn: descriptionEn || undefined,
           imageUrl: imageUrl || undefined,
           parentId: parentId === "" ? null : Number(parentId),
           sortOrder: resolvedSortOrder,
@@ -108,6 +120,9 @@ export default function CategoryForm({ mode, categoryId }: Props) {
       } else {
         await updateCategory(categoryId!, {
           name,
+          nameEn: nameEn || undefined,
+          description: description || undefined,
+          descriptionEn: descriptionEn || undefined,
           imageUrl: imageUrl || undefined,
           parentId: parentId === "" ? null : Number(parentId),
           sortOrder: resolvedSortOrder,
@@ -156,18 +171,60 @@ export default function CategoryForm({ mode, categoryId }: Props) {
         <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-6">
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Name */}
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                Tên danh mục <span className="text-error-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                placeholder="Nhập tên danh mục"
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
-              />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                  Tên danh mục (VI) <span className="text-error-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  placeholder="Nhập tên danh mục"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                  Tên danh mục (EN)
+                </label>
+                <input
+                  type="text"
+                  value={nameEn}
+                  onChange={(e) => setNameEn(e.target.value)}
+                  placeholder="Category name in English"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
+                />
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                  Mô tả (VI)
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                  placeholder="Mô tả danh mục"
+                  className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                  Mô tả (EN)
+                </label>
+                <textarea
+                  value={descriptionEn}
+                  onChange={(e) => setDescriptionEn(e.target.value)}
+                  rows={3}
+                  placeholder="Category description in English"
+                  className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
+                />
+              </div>
             </div>
 
             {/* Image section */}
