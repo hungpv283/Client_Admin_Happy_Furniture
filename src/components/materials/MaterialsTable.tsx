@@ -43,8 +43,8 @@ export default function MaterialsTable() {
     fetchMaterials();
   }, [fetchMaterials]);
 
-  const openDeleteConfirm = (id: number, name: string) => {
-    setDeleteTarget({ id, name });
+  const openDeleteConfirm = (id: number, nameVi: string) => {
+    setDeleteTarget({ id, nameVi });
     setConfirmOpen(true);
   };
 

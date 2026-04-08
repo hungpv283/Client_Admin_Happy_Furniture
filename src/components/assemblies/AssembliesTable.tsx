@@ -40,8 +40,8 @@ export default function AssembliesTable() {
     fetchAssemblies();
   }, [fetchAssemblies]);
 
-  const openDeleteConfirm = (id: number, name: string) => {
-    setDeleteTarget({ id, name });
+  const openDeleteConfirm = (id: number, nameVi: string) => {
+    setDeleteTarget({ id, nameVi });
     setConfirmOpen(true);
   };
 
