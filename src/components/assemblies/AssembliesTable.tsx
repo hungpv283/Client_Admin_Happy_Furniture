@@ -19,7 +19,7 @@ export default function AssembliesTable() {
   const [appliedFilters, setAppliedFilters] = useState<AssemblyFilters>({});
 
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; nameVi: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const fetchAssemblies = useCallback(async () => {
@@ -40,8 +40,8 @@ export default function AssembliesTable() {
     fetchAssemblies();
   }, [fetchAssemblies]);
 
-  const openDeleteConfirm = (id: number, name: string) => {
-    setDeleteTarget({ id, name });
+  const openDeleteConfirm = (id: number, nameVi: string) => {
+    setDeleteTarget({ id, nameVi });
     setConfirmOpen(true);
   };
 

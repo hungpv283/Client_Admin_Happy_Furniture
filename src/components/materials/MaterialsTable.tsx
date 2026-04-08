@@ -22,7 +22,7 @@ export default function MaterialsTable() {
   const [appliedFilters, setAppliedFilters] = useState<MaterialFilters>({});
 
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; nameVi: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const fetchMaterials = useCallback(async () => {
@@ -43,8 +43,8 @@ export default function MaterialsTable() {
     fetchMaterials();
   }, [fetchMaterials]);
 
-  const openDeleteConfirm = (id: number, name: string) => {
-    setDeleteTarget({ id, name });
+  const openDeleteConfirm = (id: number, nameVi: string) => {
+    setDeleteTarget({ id, nameVi });
     setConfirmOpen(true);
   };
 
