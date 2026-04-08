@@ -1,5 +1,7 @@
 const BASE_URL = "https://happyfurniture-huexcrecemgaesdy.southeastasia-01.azurewebsites.net/api";
 
+// const BASE_URL = "https://localhost:7290/api"
+
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
   return sessionStorage.getItem("hf_token");
@@ -179,6 +181,57 @@ export interface ProductImage {
   updatedAt: string;
 }
 
+export async function createProductImage(data: {
+  productId: number;
+  imageUrl: string;
+  altText?: string | null;
+  isPrimary: boolean;
+  sortOrder: number;
+}): Promise<ProductImage> {
+  return request<ProductImage>("/ProductImages", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function createProductImageWithImage(data: {
+  productId: number;
+  image: File;
+  isPrimary: boolean;
+  sortOrder: number;
+  altText?: string | null;
+}): Promise<ProductImage> {
+  const formData = new FormData();
+  formData.append("productId", String(data.productId));
+  formData.append("image", data.image);
+  formData.append("isPrimary", data.isPrimary ? "true" : "false");
+  formData.append("sortOrder", String(data.sortOrder));
+  if (data.altText != null) formData.append("altText", data.altText);
+
+  return requestMultipart<ProductImage>("/ProductImages/with-image", formData);
+}
+
+export async function updateProductImage(
+  id: number,
+  data: { imageUrl: string; altText?: string | null; isPrimary: boolean; sortOrder: number }
+): Promise<ProductImage> {
+  return request<ProductImage>(`/ProductImages/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteProductImage(id: number): Promise<void> {
+  return request<void>(`/ProductImages/${id}`, { method: "DELETE" });
+}
+
+export async function getProductImagesByProduct(productId: number): Promise<ProductImage[]> {
+  return request<ProductImage[]>(`/ProductImages/product/${productId}`);
+}
+
+export async function setProductImagePrimary(imageId: number): Promise<void> {
+  return request<void>(`/ProductImages/${imageId}/set-primary`, { method: "POST" });
+}
 export interface Assembly {
   id: number;
   nameVi: string;
@@ -291,9 +344,13 @@ export async function createProduct(data: CreateProductData): Promise<Product> {
   });
 }
 
+export interface UpdateProductData extends Omit<CreateProductData, "imageUrls"> {
+  imageUrls?: string[];
+}
+
 export async function updateProduct(
   id: number,
-  data: CreateProductData
+  data: UpdateProductData
 ): Promise<Product> {
   return request<Product>(`/Products/${id}`, {
     method: "PUT",
@@ -385,6 +442,17 @@ export async function createProductWithImages(
 
 // ─── Product Variants ─────────────────────────────────────────────────────────
 
+export interface ProductVariantImage {
+  id: number;
+  variantId: number;
+  imageUrl: string;
+  altText: string | null;
+  isPrimary: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ProductVariant {
   id: number;
   productId: number;
@@ -395,6 +463,7 @@ export interface ProductVariant {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  images: ProductVariantImage[];
 }
 
 export interface CreateProductVariantData {
@@ -468,6 +537,47 @@ export async function createProductVariantWithImage(
   formData.append("image", data.image);
 
   return requestMultipart<ProductVariant>("/ProductVariants/with-image", formData);
+}
+
+// ─── Product Variant Images ───────────────────────────────────────────────────
+
+export async function getVariantImages(variantId: number): Promise<ProductVariantImage[]> {
+  return request<ProductVariantImage[]>(`/ProductVariants/${variantId}/images`);
+}
+
+export async function createVariantImage(variantId: number, data: {
+  imageUrl: string;
+  altText?: string | null;
+  isPrimary: boolean;
+  sortOrder: number;
+}): Promise<ProductVariantImage> {
+  return request<ProductVariantImage>(`/ProductVariants/${variantId}/images`, {
+    method: "POST",
+    body: JSON.stringify({ ...data, variantId }),
+  });
+}
+
+export async function createVariantImageWithUpload(variantId: number, data: {
+  image: File;
+  isPrimary: boolean;
+  sortOrder: number;
+  altText?: string | null;
+}): Promise<ProductVariantImage> {
+  const formData = new FormData();
+  formData.append("image", data.image);
+  formData.append("isPrimary", data.isPrimary ? "true" : "false");
+  formData.append("sortOrder", String(data.sortOrder));
+  if (data.altText != null) formData.append("altText", data.altText);
+
+  return requestMultipart<ProductVariantImage>(`/ProductVariants/${variantId}/images/with-image`, formData);
+}
+
+export async function deleteVariantImage(imageId: number): Promise<void> {
+  return request<void>(`/ProductVariants/images/${imageId}`, { method: "DELETE" });
+}
+
+export async function setVariantImagePrimary(imageId: number): Promise<void> {
+  return request<void>(`/ProductVariants/images/${imageId}/set-primary`, { method: "POST" });
 }
 
 export interface CreateCategoryWithImageData {
