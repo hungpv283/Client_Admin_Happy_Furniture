@@ -194,10 +194,10 @@ export interface Assembly {
 export interface ProductDeliveryFields {
   deliveryInfo: string | null;
   deliveryInfoEn: string | null;
-  weight: number | null;
-  deliveryHeight: number | null;
-  deliveryWidth: number | null;
-  deliveryDepth: number | null;
+  weight: string | null;
+  deliveryHeight: string | null;
+  deliveryWidth: string | null;
+  deliveryDepth: string | null;
 }
 
 export interface Product extends ProductDeliveryFields {
@@ -209,9 +209,9 @@ export interface Product extends ProductDeliveryFields {
   descriptionEn: string | null;
   price?: number | null;
   oldPrice?: number | null;
-  dimensionsHeight: number | null;
-  dimensionsWidth: number | null;
-  dimensionsDepth: number | null;
+  dimensionsHeight: string | null;
+  dimensionsWidth: string | null;
+  dimensionsDepth: string | null;
   dimensionUnit: string;
   detail: string | null;
   detailEn: string | null;
@@ -270,9 +270,9 @@ export interface CreateProductData extends Partial<ProductDeliveryFields> {
   slug: string;
   description: string;
   descriptionEn?: string;
-  dimensionsHeight?: number | null;
-  dimensionsWidth?: number | null;
-  dimensionsDepth?: number | null;
+  dimensionsHeight?: string | null;
+  dimensionsWidth?: string | null;
+  dimensionsDepth?: string | null;
   dimensionUnit: string;
   detail?: string | null;
   detailEn?: string | null;
@@ -338,9 +338,9 @@ export interface CreateProductWithImagesData extends Partial<ProductDeliveryFiel
   slug: string;
   description?: string;
   descriptionEn?: string;
-  dimensionsHeight?: number | null;
-  dimensionsWidth?: number | null;
-  dimensionsDepth?: number | null;
+  dimensionsHeight?: string | null;
+  dimensionsWidth?: string | null;
+  dimensionsDepth?: string | null;
   dimensionUnit?: string;
   detail?: string | null;
   detailEn?: string | null;
