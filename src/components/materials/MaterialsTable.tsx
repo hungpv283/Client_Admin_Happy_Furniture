@@ -22,7 +22,7 @@ export default function MaterialsTable() {
   const [appliedFilters, setAppliedFilters] = useState<MaterialFilters>({});
 
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; nameVi: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const fetchMaterials = useCallback(async () => {
