@@ -176,8 +176,10 @@ export default function MaterialsTable() {
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
                 <th className="w-16 px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">ID</th>
-                <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Tên chất liệu</th>
-                <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Mô tả</th>
+                <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Tên (VI)</th>
+                <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Tên (EN)</th>
+                <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Mô tả (VI)</th>
+                <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Mô tả (EN)</th>
                 <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Trạng thái</th>
                 <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Ngày tạo</th>
                 <th className="px-5 py-4 text-right font-semibold text-gray-600 dark:text-gray-400">Thao tác</th>
@@ -187,7 +189,7 @@ export default function MaterialsTable() {
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="border-b border-gray-100 dark:border-gray-800">
-                    {Array.from({ length: 6 }).map((__, j) => (
+                    {Array.from({ length: 8 }).map((__, j) => (
                       <td key={j} className="px-5 py-4">
                         <div className="h-4 w-full animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
                       </td>
@@ -196,7 +198,7 @@ export default function MaterialsTable() {
                 ))
               ) : materials.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center text-gray-400">
+                  <td colSpan={8} className="px-5 py-12 text-center text-gray-400">
                     Chưa có chất liệu nào
                   </td>
                 </tr>
@@ -208,10 +210,16 @@ export default function MaterialsTable() {
                   >
                     <td className="px-5 py-4 text-gray-500 dark:text-gray-400">#{material.id}</td>
                     <td className="px-5 py-4 font-medium text-gray-800 dark:text-white/90">
-                      {material.name}
+                      {material.nameVi}
                     </td>
                     <td className="px-5 py-4 text-gray-500 dark:text-gray-400">
-                      <span className="line-clamp-2">{material.description || "-"}</span>
+                      {material.nameEn || "-"}
+                    </td>
+                    <td className="px-5 py-4 text-gray-500 dark:text-gray-400">
+                      <span className="line-clamp-2">{material.descriptionVi || "-"}</span>
+                    </td>
+                    <td className="px-5 py-4 text-gray-500 dark:text-gray-400">
+                      <span className="line-clamp-2">{material.descriptionEn || "-"}</span>
                     </td>
                     <td className="px-5 py-4">
                       <span
@@ -244,7 +252,7 @@ export default function MaterialsTable() {
                           Sửa
                         </Link>
                         <button
-                          onClick={() => openDeleteConfirm(material.id, material.name)}
+                          onClick={() => openDeleteConfirm(material.id, material.nameVi)}
                           className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100 dark:bg-red-500/15 dark:text-red-400 dark:hover:bg-red-500/25"
                         >
                           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

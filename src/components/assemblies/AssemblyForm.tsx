@@ -16,8 +16,10 @@ export default function AssemblyForm({ mode, assemblyId }: Props) {
   const { success, error: toastError } = useToast();
 
   const [name, setName] = useState("");
+  const [nameEn, setNameEn] = useState("");
   const [code, setCode] = useState("");
-  const [description, setDescription] = useState("");
+  const [descriptionVi, setDescriptionVi] = useState("");
+  const [descriptionEn, setDescriptionEn] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(mode === "edit");
@@ -28,9 +30,11 @@ export default function AssemblyForm({ mode, assemblyId }: Props) {
     setFetching(true);
     getAssemblyById(assemblyId)
       .then((assembly) => {
-        setName(assembly.name);
+        setName(assembly.nameVi);
+        setNameEn(assembly.nameEn ?? "");
         setCode(assembly.code);
-        setDescription(assembly.description ?? "");
+        setDescriptionVi(assembly.descriptionVi ?? "");
+        setDescriptionEn(assembly.descriptionEn ?? "");
         setIsActive(assembly.isActive);
       })
       .catch(() => toastError("Không thể tải thông tin assembly"))
@@ -43,9 +47,11 @@ export default function AssemblyForm({ mode, assemblyId }: Props) {
 
     try {
       const payload = {
-        name: name.trim(),
+        nameVi: name.trim(),
+        nameEn: nameEn.trim() || undefined,
         code: code.trim(),
-        description: description.trim(),
+        descriptionVi: descriptionVi.trim() || undefined,
+        descriptionEn: descriptionEn.trim() || undefined,
         isActive,
       };
 
@@ -93,18 +99,32 @@ export default function AssemblyForm({ mode, assemblyId }: Props) {
       <div className="max-w-2xl">
         <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                Tên assembly <span className="text-error-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                placeholder="Nhập tên assembly"
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
-              />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                  Tên assembly (VI) <span className="text-error-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  placeholder="Nhập tên assembly tiếng Việt"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                  Tên assembly (EN)
+                </label>
+                <input
+                  type="text"
+                  value={nameEn}
+                  onChange={(e) => setNameEn(e.target.value)}
+                  placeholder="Assembly name in English"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
+                />
+              </div>
             </div>
 
             <div>
@@ -116,22 +136,36 @@ export default function AssemblyForm({ mode, assemblyId }: Props) {
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 required
-                placeholder="Nhập code (vd: ASSM-001)"
+                placeholder="Nhập code (vd: DIRECT, ADVANCED)"
                 className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 font-mono text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
               />
             </div>
 
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                Mô tả
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={4}
-                placeholder="Nhập mô tả assembly"
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
-              />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                  Mô tả (VI)
+                </label>
+                <textarea
+                  value={descriptionVi}
+                  onChange={(e) => setDescriptionVi(e.target.value)}
+                  rows={4}
+                  placeholder="Nhập mô tả tiếng Việt"
+                  className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                  Mô tả (EN)
+                </label>
+                <textarea
+                  value={descriptionEn}
+                  onChange={(e) => setDescriptionEn(e.target.value)}
+                  rows={4}
+                  placeholder="Description in English"
+                  className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
+                />
+              </div>
             </div>
 
             <div>

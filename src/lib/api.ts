@@ -181,9 +181,11 @@ export interface ProductImage {
 
 export interface Assembly {
   id: number;
-  name: string;
+  nameVi: string;
+  nameEn: string | null;
   code: string;
-  description: string;
+  descriptionVi: string | null;
+  descriptionEn: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -499,16 +501,20 @@ export async function createCategoryWithImage(
 
 export interface Material {
   id: number;
-  name: string;
-  description: string;
+  nameVi: string;
+  nameEn: string | null;
+  descriptionVi: string | null;
+  descriptionEn: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface MaterialPayload {
-  name: string;
-  description: string;
+  nameVi: string;
+  nameEn?: string;
+  descriptionVi?: string;
+  descriptionEn?: string;
   isActive: boolean;
 }
 
@@ -588,9 +594,11 @@ export async function getAssemblyById(id: number): Promise<Assembly> {
 }
 
 export interface AssemblyPayload {
-  name: string;
+  nameVi: string;
+  nameEn?: string;
   code: string;
-  description: string;
+  descriptionVi?: string;
+  descriptionEn?: string;
   isActive: boolean;
 }
 
