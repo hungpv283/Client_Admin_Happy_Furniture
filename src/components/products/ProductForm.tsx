@@ -112,6 +112,12 @@ export default function ProductForm({ mode, productId }: Props) {
   }, [mode, productId, toastError]);
 
   const childCategories = allCategories.filter((x) => x.parentId != null);
+
+  // 子分类：根据选中的父分类进行筛选
+  const filteredChildCategories = selectedParentCategoryIds.length > 0
+    ? childCategories.filter((c) => selectedParentCategoryIds.includes(c.parentId!))
+    : childCategories;
+
   const categoryIds = Array.from(new Set([...selectedParentCategoryIds, ...selectedChildCategoryIds]));
 
   const generateSlug = (value: string) =>
@@ -376,13 +382,13 @@ export default function ProductForm({ mode, productId }: Props) {
               >
                 <option value="">Không có</option>
                 {allAssemblies.map((a) => (
-                  <option key={a.id} value={a.id}>{a.name}</option>
+                  <option key={a.id} value={a.id}>{a.nameVi}</option>
                 ))}
               </select>
             </div>
 
             <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-              <h2 className="mb-5 font-semibold text-gray-800 dark:text-white/90">Danh mục con</h2>
+              <h2 className="mb-5 font-semibold text-gray-800 dark:text-white/90">Danh mục cha</h2>
               <div className="max-h-64 space-y-1 overflow-y-auto">
                 {rootCategories.map((category) => (
                   <label key={category.id} className="flex cursor-pointer items-center gap-3 rounded-lg p-2 transition-colors hover:bg-gray-50 dark:hover:bg-white/5">
@@ -394,9 +400,11 @@ export default function ProductForm({ mode, productId }: Props) {
             </div>
 
             <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-              <h2 className="mb-5 font-semibold text-gray-800 dark:text-white/90">Danh mục cha</h2>
+              <h2 className="mb-5 font-semibold text-gray-800 dark:text-white/90">Danh mục con</h2>
               <div className="max-h-64 space-y-1 overflow-y-auto">
-                {childCategories.map((category) => (
+                {filteredChildCategories.length === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Chọn danh mục cha để hiển thị danh mục con</p>
+                ) : filteredChildCategories.map((category) => (
                   <label key={category.id} className="flex cursor-pointer items-center gap-3 rounded-lg p-2 transition-colors hover:bg-gray-50 dark:hover:bg-white/5">
                     <input type="checkbox" checked={selectedChildCategoryIds.includes(category.id)} onChange={() => toggle(category.id, selectedChildCategoryIds, setSelectedChildCategoryIds)} className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500" />
                     <span className="text-sm text-gray-700 dark:text-gray-400">{category.name.trim()}</span>
@@ -411,7 +419,7 @@ export default function ProductForm({ mode, productId }: Props) {
                 {allMaterials.length === 0 ? <p className="text-sm text-gray-500 dark:text-gray-400">Chưa có chất liệu đang hoạt động</p> : allMaterials.map((material) => (
                   <label key={material.id} className="flex cursor-pointer items-start gap-3 rounded-lg p-2 transition-colors hover:bg-gray-50 dark:hover:bg-white/5">
                     <input type="checkbox" checked={selectedMaterialIds.includes(material.id)} onChange={() => toggle(material.id, selectedMaterialIds, setSelectedMaterialIds)} className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500" />
-                    <div className="min-w-0"><span className="block text-sm text-gray-700 dark:text-gray-400">{material.name}</span>{material.description && <span className="block truncate text-xs text-gray-500 dark:text-gray-500">{material.description}</span>}</div>
+                    <div className="min-w-0"><span className="block text-sm text-gray-700 dark:text-gray-400">{material.nameVi}</span>{material.descriptionVi && <span className="block truncate text-xs text-gray-500 dark:text-gray-500">{material.descriptionVi}</span>}</div>
                   </label>
                 ))}
               </div>
