@@ -1,10 +1,11 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   createProduct,
+  createProductImageWithImage,
   createProductWithImages,
   getActiveMaterials,
   getActiveAssemblies,
@@ -28,6 +29,7 @@ type ImageEntry = {
   url: string;
   file: File | null;
   preview: string;
+  imageId?: number;       // ID của ProductImage khi load từ API (edit mode)
 };
 
 const newEntry = (): ImageEntry => ({ mode: "url", url: "", file: null, preview: "" });
@@ -104,8 +106,20 @@ export default function ProductForm({ mode, productId }: Props) {
         setSelectedParentCategoryIds(product.categories.filter((x) => x.parentId == null).map((x) => x.id));
         setSelectedChildCategoryIds(product.categories.filter((x) => x.parentId != null).map((x) => x.id));
         setSelectedMaterialIds(product.materials?.map((x) => x.id) ?? product.materialIds ?? []);
-        const urls = product.images.map((img) => img.imageUrl).filter(Boolean);
-        setImages(urls.length ? urls.map((url) => ({ mode: "url", url, file: null, preview: url })) : [newEntry()]);
+        const validImages = product.images.filter((img) => img.imageUrl);
+        if (validImages.length) {
+          setImages(
+            validImages.map((img) => ({
+              mode: "url" as ImageMode,
+              url: img.imageUrl,
+              file: null,
+              preview: img.imageUrl,
+              imageId: img.id,
+            }))
+          );
+        } else {
+          setImages([newEntry()]);
+        }
       })
       .catch(() => toastError("Không thể tải thông tin sản phẩm"))
       .finally(() => setFetching(false));
@@ -139,6 +153,7 @@ export default function ProductForm({ mode, productId }: Props) {
       return next;
     });
   };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -199,8 +214,35 @@ export default function ProductForm({ mode, productId }: Props) {
           materialIds: selectedMaterialIds,
           imageUrls: images.filter((img) => img.mode === "url" && img.url.trim()).map((img) => img.url.trim()),
         };
-        if (mode === "create") await createProduct(payload);
-        else await updateProduct(productId!, payload);
+        if (mode === "create") {
+          await createProduct(payload);
+        } else {
+          // ── Edit mode ──
+          // Thu thập URL ảnh hiện tại (cả URL cũ lẫn mới)
+          const urlImages = images
+            .filter((img) => img.mode === "url" && img.url.trim())
+            .map((img) => img.url.trim());
+
+          const fileImages = images.filter((img) => img.mode === "file" && img.file);
+
+          // Gửi imageUrls cho BE xử lý (xóa hết rồi tạo lại 1 lần)
+          await updateProduct(productId!, {
+            ...payload,
+            imageUrls: urlImages,
+          });
+
+          // Upload file ảnh mới (nếu có) - chỉ gọi API cho file upload
+          for (let i = 0; i < fileImages.length; i++) {
+            const entry = fileImages[i];
+            await createProductImageWithImage({
+              productId: productId!,
+              image: entry.file!,
+              isPrimary: urlImages.length === 0 && i === 0,
+              sortOrder: urlImages.length + i + 1,
+              altText: null,
+            });
+          }
+        }
       }
       success(mode === "create" ? "Tạo sản phẩm thành công!" : "Cập nhật sản phẩm thành công!");
       router.push("/products");
@@ -304,7 +346,7 @@ export default function ProductForm({ mode, productId }: Props) {
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Ảnh #{index + 1}</span>
                       <div className="flex items-center gap-3">
-                        {mode === "create" && (
+                        {(
                           <div className="flex overflow-hidden rounded-lg border border-gray-200 text-xs dark:border-gray-700">
                             <button type="button" onClick={() => updateImage(index, { mode: "url", url: "", file: null, preview: "" })} className={`px-3 py-1.5 font-medium transition-colors ${entry.mode === "url" ? "bg-brand-500 text-white" : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5"}`}>URL</button>
                             <button type="button" onClick={() => updateImage(index, { mode: "file", url: "", file: null, preview: "" })} className={`px-3 py-1.5 font-medium transition-colors ${entry.mode === "file" ? "bg-brand-500 text-white" : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5"}`}>Từ máy</button>
