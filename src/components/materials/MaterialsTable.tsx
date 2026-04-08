@@ -56,7 +56,7 @@ export default function MaterialsTable() {
       await deleteMaterial(deleteTarget.id);
       setConfirmOpen(false);
       setDeleteTarget(null);
-      success(`Đã xóa chất liệu "${deleteTarget.name}"`);
+      success(`Đã xóa chất liệu "${deleteTarget.nameVi}"`);
       await fetchMaterials();
     } catch (err: unknown) {
       toastError(err instanceof Error ? err.message : "Xóa thất bại");
@@ -93,7 +93,7 @@ export default function MaterialsTable() {
       <ConfirmDialog
         open={confirmOpen}
         title="Xóa chất liệu"
-        message={`Bạn có chắc muốn xóa chất liệu "${deleteTarget?.name}"? Hành động này không thể hoàn tác.`}
+        message={`Bạn có chắc muốn xóa chất liệu "${deleteTarget?.nameVi}"? Hành động này không thể hoàn tác.`}
         confirmLabel="Xóa"
         loading={deleting}
         onConfirm={handleDeleteConfirm}

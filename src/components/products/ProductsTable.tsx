@@ -202,7 +202,7 @@ export default function ProductsTable() {
               <option value="">Tất cả</option>
               {materialOptions.map((material) => (
                 <option key={material.id} value={material.id}>
-                  {material.name}
+                  {material.nameVi}
                 </option>
               ))}
             </select>

@@ -52,7 +52,7 @@ export default function AssembliesTable() {
       await deleteAssembly(deleteTarget.id);
       setConfirmOpen(false);
       setDeleteTarget(null);
-      success(`Đã xóa assembly "${deleteTarget.name}"`);
+      success(`Đã xóa assembly "${deleteTarget.nameVi}"`);
       await fetchAssemblies();
     } catch (err: unknown) {
       toastError(err instanceof Error ? err.message : "Xóa thất bại");
@@ -86,7 +86,7 @@ export default function AssembliesTable() {
       <ConfirmDialog
         open={confirmOpen}
         title="Xóa assembly"
-        message={`Bạn có chắc muốn xóa assembly "${deleteTarget?.name}"? Hành động này không thể hoàn tác.`}
+        message={`Bạn có chắc muốn xóa assembly "${deleteTarget?.nameVi}"? Hành động này không thể hoàn tác.`}
         confirmLabel="Xóa"
         loading={deleting}
         onConfirm={handleDeleteConfirm}
