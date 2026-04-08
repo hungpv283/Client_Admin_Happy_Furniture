@@ -86,18 +86,18 @@ export default function ProductForm({ mode, productId }: Props) {
         setSlug(product.slug);
         setDescription(product.description || "");
         setDescriptionEn(product.descriptionEn || "");
-        setDimensionsHeight(product.dimensionsHeight != null ? String(product.dimensionsHeight) : "");
-        setDimensionsWidth(product.dimensionsWidth != null ? String(product.dimensionsWidth) : "");
-        setDimensionsDepth(product.dimensionsDepth != null ? String(product.dimensionsDepth) : "");
+        setDimensionsHeight(product.dimensionsHeight ?? "");
+        setDimensionsWidth(product.dimensionsWidth ?? "");
+        setDimensionsDepth(product.dimensionsDepth ?? "");
         setDimensionUnit(product.dimensionUnit || "cm");
         setDetail(product.detail || "");
         setDetailEn(product.detailEn || "");
         setDeliveryInfo(product.deliveryInfo || "");
         setDeliveryInfoEn(product.deliveryInfoEn || "");
-        setWeight(product.weight != null ? String(product.weight) : "");
-        setDeliveryHeight(product.deliveryHeight != null ? String(product.deliveryHeight) : "");
-        setDeliveryWidth(product.deliveryWidth != null ? String(product.deliveryWidth) : "");
-        setDeliveryDepth(product.deliveryDepth != null ? String(product.deliveryDepth) : "");
+        setWeight(product.weight ?? "");
+        setDeliveryHeight(product.deliveryHeight ?? "");
+        setDeliveryWidth(product.deliveryWidth ?? "");
+        setDeliveryDepth(product.deliveryDepth ?? "");
         setIsFeatured(product.isFeatured);
         setIsActive(product.isActive);
         setAssemblyId(product.assemblyId ?? "");
@@ -154,18 +154,18 @@ export default function ProductForm({ mode, productId }: Props) {
           slug,
           description,
           descriptionEn: descriptionEn || undefined,
-          dimensionsHeight: dimensionsHeight ? parseFloat(dimensionsHeight) : null,
-          dimensionsWidth: dimensionsWidth ? parseFloat(dimensionsWidth) : null,
-          dimensionsDepth: dimensionsDepth ? parseFloat(dimensionsDepth) : null,
+          dimensionsHeight: dimensionsHeight || null,
+          dimensionsWidth: dimensionsWidth || null,
+          dimensionsDepth: dimensionsDepth || null,
           dimensionUnit,
           detail,
           detailEn: detailEn || undefined,
           deliveryInfo,
           deliveryInfoEn: deliveryInfoEn || undefined,
-          weight: weight ? parseFloat(weight) : null,
-          deliveryHeight: deliveryHeight ? parseFloat(deliveryHeight) : null,
-          deliveryWidth: deliveryWidth ? parseFloat(deliveryWidth) : null,
-          deliveryDepth: deliveryDepth ? parseFloat(deliveryDepth) : null,
+          weight: weight || null,
+          deliveryHeight: deliveryHeight || null,
+          deliveryWidth: deliveryWidth || null,
+          deliveryDepth: deliveryDepth || null,
           isFeatured,
           isActive,
           assemblyId: resolvedAssemblyId,
@@ -180,18 +180,18 @@ export default function ProductForm({ mode, productId }: Props) {
           slug,
           description,
           descriptionEn: descriptionEn || undefined,
-          dimensionsHeight: dimensionsHeight ? parseFloat(dimensionsHeight) : null,
-          dimensionsWidth: dimensionsWidth ? parseFloat(dimensionsWidth) : null,
-          dimensionsDepth: dimensionsDepth ? parseFloat(dimensionsDepth) : null,
+          dimensionsHeight: dimensionsHeight || null,
+          dimensionsWidth: dimensionsWidth || null,
+          dimensionsDepth: dimensionsDepth || null,
           dimensionUnit,
           detail,
           detailEn: detailEn || undefined,
           deliveryInfo,
           deliveryInfoEn: deliveryInfoEn || undefined,
-          weight: weight ? parseFloat(weight) : null,
-          deliveryHeight: deliveryHeight ? parseFloat(deliveryHeight) : null,
-          deliveryWidth: deliveryWidth ? parseFloat(deliveryWidth) : null,
-          deliveryDepth: deliveryDepth ? parseFloat(deliveryDepth) : null,
+          weight: weight || null,
+          deliveryHeight: deliveryHeight || null,
+          deliveryWidth: deliveryWidth || null,
+          deliveryDepth: deliveryDepth || null,
           isFeatured,
           isActive,
           assemblyId: resolvedAssemblyId,
@@ -279,7 +279,7 @@ export default function ProductForm({ mode, productId }: Props) {
                 ].map(({ label, value, set }) => (
                   <div key={label}>
                     <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">{label}</label>
-                    <input type="number" value={value} onChange={(e) => set(e.target.value)} min="0" step="0.1" placeholder="0" className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+                    <input type="text" value={value} onChange={(e) => set(e.target.value)} placeholder="0" className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
                   </div>
                 ))}
                 <div>
@@ -291,7 +291,7 @@ export default function ProductForm({ mode, productId }: Props) {
               </div>
               <div className="mt-4">
                 <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Trọng lượng (kg)</label>
-                <input type="number" value={weight} onChange={(e) => setWeight(e.target.value)} min="0" step="0.1" placeholder="0" className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+                <input type="text" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="0" className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
               </div>
             </div>
 
@@ -349,7 +349,7 @@ export default function ProductForm({ mode, productId }: Props) {
                   ].map(({ label, value, set }) => (
                     <div key={label}>
                       <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">{label}</label>
-                      <input type="number" value={value} onChange={(e) => set(e.target.value)} min="0" step="0.1" placeholder="0" className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+                      <input type="text" value={value} onChange={(e) => set(e.target.value)} placeholder="0" className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
                     </div>
                   ))}
                 </div>
