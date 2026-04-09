@@ -457,6 +457,7 @@ export interface ProductVariant {
   id: number;
   productId: number;
   colorName: string;
+  slug: string | null;
   colorCode: string;
   imageUrl: string | null;
   price: number | null;
@@ -469,6 +470,7 @@ export interface ProductVariant {
 export interface CreateProductVariantData {
   productId: number;
   colorName: string;
+  slug?: string | null;
   colorCode: string;
   imageUrl?: string | null;
   isActive: boolean;
@@ -476,6 +478,7 @@ export interface CreateProductVariantData {
 
 export interface UpdateProductVariantData {
   colorName: string;
+  slug?: string | null;
   colorCode: string;
   imageUrl?: string | null;
   isActive: boolean;

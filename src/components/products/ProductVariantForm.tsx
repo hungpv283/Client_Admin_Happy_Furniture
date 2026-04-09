@@ -31,6 +31,7 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
   const [submitting, setSubmitting] = useState(false);
 
   const [colorName, setColorName] = useState("");
+  const [slug, setSlug] = useState("");
   const [colorCode, setColorCode] = useState("FFFFFF");
   const [imageMode, setImageMode] = useState<ImageMode>("url");
   const [imageUrl, setImageUrl] = useState("");
@@ -50,6 +51,7 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
         if (mode === "edit" && variantId) {
           const variantData = await getProductVariantById(variantId);
           setColorName(variantData.colorName || "");
+          setSlug(variantData.slug || "");
           setColorCode((variantData.colorCode || "FFFFFF").replace("#", "").toUpperCase());
           setImageUrl(variantData.imageUrl || "");
           setImagePreview(variantData.imageUrl || "");
@@ -64,6 +66,18 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
 
     load();
   }, [mode, productId, variantId, toastError]);
+
+  const generateSlug = (value: string) =>
+    value.toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/[^a-z0-9\s-]/g, "")
+      .trim().replace(/\s+/g, "-");
+
+  const handleColorNameChange = (value: string) => {
+    setColorName(value);
+    if (mode === "create") setSlug(generateSlug(value));
+  };
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -124,6 +138,7 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
           await createProductVariant({
             productId,
             colorName: colorName.trim(),
+            slug: slug.trim() || undefined,
             colorCode: colorCode.trim().toUpperCase(),
             imageUrl: imageUrl.trim() || undefined,
             isActive,
@@ -133,6 +148,7 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
       } else if (variantId) {
         await updateProductVariant(variantId, {
           colorName: colorName.trim(),
+          slug: slug.trim() || undefined,
           colorCode: colorCode.trim().toUpperCase(),
           imageUrl: imageMode === "url" ? imageUrl.trim() || undefined : undefined,
           isActive,
@@ -208,7 +224,7 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
                 <input
                   type="text"
                   value={colorName}
-                  onChange={(e) => setColorName(e.target.value)}
+                  onChange={(e) => handleColorNameChange(e.target.value)}
                   placeholder="VD: Xám nhạt, Xanh navy, ..."
                   className={`w-full rounded-xl border bg-white px-4 py-2.5 text-sm outline-none transition-colors dark:bg-white/5 dark:text-white/90 ${
                     errors.colorName
@@ -217,6 +233,18 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
                   }`}
                 />
                 {errors.colorName && <p className="mt-1 text-xs text-red-500">{errors.colorName}</p>}
+              </div>
+
+              <div className="mb-5">
+                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Slug màu</label>
+                <input
+                  type="text"
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value)}
+                  placeholder="VD: mau-trang, xanh-navy, ..."
+                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90"
+                />
+                <p className="mt-1 text-xs text-gray-400">Tự động tạo từ tên màu. Dùng để nối URL khi chọn màu.</p>
               </div>
 
               <div className="mb-5">
