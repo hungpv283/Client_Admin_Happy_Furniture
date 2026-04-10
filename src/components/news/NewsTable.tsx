@@ -12,11 +12,6 @@ const NEWS_TYPE_LABELS: Record<string, string> = {
   Activity: "Hoạt động",
 };
 
-const CATEGORY_LABELS: Record<string, string> = {
-  TeamBuilding: "Team Building",
-  FactoryTour: "Tham quan nhà máy",
-};
-
 export default function NewsTable() {
   const { success, error: toastError } = useToast();
   const [items, setItems] = useState<News[]>([]);
@@ -25,7 +20,7 @@ export default function NewsTable() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const pageSize = 10;
-  const [filters, setFilters] = useState({ title: "", type: "", category: "", isActive: "" });
+  const [filters, setFilters] = useState({ title: "", type: "", isActive: "" });
   const [appliedFilters, setAppliedFilters] = useState<NewsFilters>({});
 
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -82,13 +77,12 @@ export default function NewsTable() {
     setAppliedFilters({
       title: filters.title.trim() || undefined,
       type: filters.type || undefined,
-      category: filters.category || undefined,
       isActive: filters.isActive === "" ? undefined : filters.isActive === "true",
     });
   };
 
   const handleClearFilters = () => {
-    setFilters({ title: "", type: "", category: "", isActive: "" });
+    setFilters({ title: "", type: "", isActive: "" });
     setPage(1);
     setAppliedFilters({});
   };
@@ -126,9 +120,9 @@ export default function NewsTable() {
       <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="mb-4">
           <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">Bộ lọc tìm kiếm</h2>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Lọc tin tức theo tiêu đề, loại, danh mục và trạng thái.</p>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Lọc tin tức theo tiêu đề, loại và trạng thái.</p>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-3">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Tiêu đề</label>
             <input
@@ -149,18 +143,6 @@ export default function NewsTable() {
               <option value="">Tất cả</option>
               <option value="Event">Sự kiện</option>
               <option value="Activity">Hoạt động</option>
-            </select>
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Danh mục</label>
-            <select
-              value={filters.category}
-              onChange={(e) => setFilters((prev) => ({ ...prev, category: e.target.value }))}
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-            >
-              <option value="">Tất cả</option>
-              <option value="TeamBuilding">Team Building</option>
-              <option value="FactoryTour">Tham quan nhà máy</option>
             </select>
           </div>
           <div>
@@ -203,8 +185,6 @@ export default function NewsTable() {
                 <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Tiêu đề (VI)</th>
                 <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Slug</th>
                 <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Loại</th>
-                <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Danh mục</th>
-                <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Năm</th>
                 <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Trạng thái</th>
                 <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Ngày tạo</th>
                 <th className="px-5 py-4 text-right font-semibold text-gray-600 dark:text-gray-400">Thao tác</th>
@@ -214,7 +194,7 @@ export default function NewsTable() {
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="border-b border-gray-100 dark:border-gray-800">
-                    {Array.from({ length: 9 }).map((__, j) => (
+                    {Array.from({ length: 7 }).map((__, j) => (
                       <td key={j} className="px-5 py-4">
                         <div className="h-4 w-full animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
                       </td>
@@ -223,7 +203,7 @@ export default function NewsTable() {
                 ))
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-5 py-12 text-center text-gray-400">
+                  <td colSpan={7} className="px-5 py-12 text-center text-gray-400">
                     Chưa có tin tức nào
                   </td>
                 </tr>
@@ -239,27 +219,19 @@ export default function NewsTable() {
                       <span className="rounded bg-gray-100 px-2 py-0.5 font-mono text-xs dark:bg-white/10">{item.slug}</span>
                     </td>
                     <td className="px-5 py-4">
-                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
-                        item.type === "Event"
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${item.type === "Event"
                           ? "bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400"
                           : "bg-purple-50 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400"
-                      }`}>
+                        }`}>
                         {NEWS_TYPE_LABELS[item.type] ?? item.type}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-gray-500 dark:text-gray-400">
-                      {item.category ? CATEGORY_LABELS[item.category] ?? item.category : "-"}
-                    </td>
-                    <td className="px-5 py-4 text-gray-500 dark:text-gray-400">
-                      {item.year ?? "-"}
-                    </td>
                     <td className="px-5 py-4">
                       <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
-                          item.isActive
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${item.isActive
                             ? "bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-400"
                             : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
-                        }`}
+                          }`}
                       >
                         <span className={`h-1.5 w-1.5 rounded-full ${item.isActive ? "bg-green-500" : "bg-gray-400"}`} />
                         {item.isActive ? "Hoạt động" : "Ẩn"}

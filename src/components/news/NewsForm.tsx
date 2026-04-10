@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createNews, getNewsById, updateNews } from "@/lib/api";
 import type { NewsPayload } from "@/lib/api";
@@ -24,9 +25,8 @@ export default function NewsForm({ mode, newsId }: Props) {
   const [excerptVi, setExcerptVi] = useState("");
   const [excerptEn, setExcerptEn] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [imageError, setImageError] = useState(false);
   const [type, setType] = useState("Event");
-  const [category, setCategory] = useState("");
-  const [year, setYear] = useState("");
   const [sortOrder, setSortOrder] = useState(0);
   const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -45,9 +45,8 @@ export default function NewsForm({ mode, newsId }: Props) {
         setExcerptVi(item.excerptVi ?? "");
         setExcerptEn(item.excerptEn ?? "");
         setImageUrl(item.imageUrl ?? "");
+        setImageError(false);
         setType(item.type);
-        setCategory(item.category ?? "");
-        setYear(item.year?.toString() ?? "");
         setSortOrder(item.sortOrder);
         setIsActive(item.isActive);
       })
@@ -89,8 +88,6 @@ export default function NewsForm({ mode, newsId }: Props) {
         isActive,
         sortOrder,
         type,
-        category: category || undefined,
-        year: year ? parseInt(year, 10) : undefined,
       };
 
       if (mode === "create") {
@@ -134,111 +131,84 @@ export default function NewsForm({ mode, newsId }: Props) {
         </h1>
       </div>
 
-      <div className="max-w-4xl">
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                  Tiêu đề (VI) <span className="text-error-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={titleVi}
-                  onChange={(e) => handleTitleViChange(e.target.value)}
-                  required
-                  placeholder="Nhập tiêu đề tiếng Việt"
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                  Tiêu đề (EN)
-                </label>
-                <input
-                  type="text"
-                  value={titleEn}
-                  onChange={(e) => setTitleEn(e.target.value)}
-                  placeholder="English title"
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
-                />
-              </div>
-            </div>
-
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Tiêu đề */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                Slug <span className="text-error-500">*</span>
+                Tiêu đề (VI) <span className="text-error-500">*</span>
               </label>
               <input
                 type="text"
-                value={slug}
-                onChange={(e) => setSlug(generateSlug(e.target.value))}
+                value={titleVi}
+                onChange={(e) => handleTitleViChange(e.target.value)}
                 required
-                placeholder="duong-dan-url"
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 font-mono text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
+                placeholder="Nhập tiêu đề tiếng Việt"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
               />
             </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                  Loại <span className="text-error-500">*</span>
-                </label>
-                <select
-                  value={type}
-                  onChange={(e) => setType(e.target.value)}
-                  required
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-                >
-                  <option value="Event">Sự kiện (Event)</option>
-                  <option value="Activity">Hoạt động (Activity)</option>
-                </select>
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                  Danh mục (chỉ dùng cho Hoạt động)
-                </label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-                >
-                  <option value="">-- Không chọn --</option>
-                  <option value="TeamBuilding">Team Building</option>
-                  <option value="FactoryTour">Tham quan nhà máy</option>
-                </select>
-              </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                Tiêu đề (EN)
+              </label>
+              <input
+                type="text"
+                value={titleEn}
+                onChange={(e) => setTitleEn(e.target.value)}
+                placeholder="English title"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
+              />
             </div>
+          </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                  Năm (dùng cho Sự kiện)
-                </label>
-                <input
-                  type="number"
-                  value={year}
-                  onChange={(e) => setYear(e.target.value)}
-                  placeholder="VD: 2025"
-                  min="2000"
-                  max="2100"
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                  Thứ tự sắp xếp
-                </label>
-                <input
-                  type="number"
-                  value={sortOrder}
-                  onChange={(e) => setSortOrder(parseInt(e.target.value, 10) || 0)}
-                  min="0"
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
-                />
-              </div>
+          {/* Slug */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+              Slug <span className="text-error-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={slug}
+              onChange={(e) => setSlug(generateSlug(e.target.value))}
+              required
+              placeholder="duong-dan-url"
+              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 font-mono text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
+            />
+          </div>
+
+          {/* Loại + Thứ tự */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                Loại <span className="text-error-500">*</span>
+              </label>
+              <select
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                required
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+              >
+                <option value="Event">Sự kiện (Event)</option>
+                <option value="Activity">Hoạt động (Activity)</option>
+              </select>
             </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                Thứ tự sắp xếp
+              </label>
+              <input
+                type="number"
+                value={sortOrder}
+                onChange={(e) => setSortOrder(parseInt(e.target.value, 10) || 0)}
+                min="0"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
+              />
+            </div>
+          </div>
 
+          {/* Image URL + Preview */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                 Image URL
@@ -246,12 +216,40 @@ export default function NewsForm({ mode, newsId }: Props) {
               <input
                 type="url"
                 value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
+                onChange={(e) => { setImageUrl(e.target.value); setImageError(false); }}
                 placeholder="https://example.com/image.jpg"
                 className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
               />
             </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                Xem trước ảnh
+              </label>
+              {imageUrl && !imageError ? (
+                <div className="relative h-[120px] w-full overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                  <Image
+                    src={imageUrl}
+                    alt="Preview"
+                    fill
+                    className="object-cover"
+                    onError={() => setImageError(true)}
+                    unoptimized
+                  />
+                </div>
+              ) : (
+                <div className="flex h-[120px] w-full items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-white/5">
+                  {imageError ? (
+                    <span className="text-xs text-red-400">Không thể tải ảnh</span>
+                  ) : (
+                    <span className="text-xs text-gray-400">Nhập URL để xem trước</span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
 
+          {/* Mô tả ngắn */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                 Mô tả ngắn (VI)
@@ -264,7 +262,6 @@ export default function NewsForm({ mode, newsId }: Props) {
                 className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
               />
             </div>
-
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                 Mô tả ngắn (EN)
@@ -277,69 +274,72 @@ export default function NewsForm({ mode, newsId }: Props) {
                 className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
               />
             </div>
+          </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                  Nội dung (VI)
-                </label>
-                <textarea
-                  value={contentVi}
-                  onChange={(e) => setContentVi(e.target.value)}
-                  rows={5}
-                  placeholder="Nội dung tiếng Việt"
-                  className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                  Nội dung (EN)
-                </label>
-                <textarea
-                  value={contentEn}
-                  onChange={(e) => setContentEn(e.target.value)}
-                  rows={5}
-                  placeholder="Content in English"
-                  className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
-                />
-              </div>
-            </div>
-
+          {/* Nội dung */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="flex cursor-pointer items-center gap-3">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    className="sr-only"
-                    checked={isActive}
-                    onChange={(e) => setIsActive(e.target.checked)}
-                  />
-                  <div className={`h-6 w-11 rounded-full transition-colors ${isActive ? "bg-brand-500" : "bg-gray-300 dark:bg-gray-600"}`} />
-                  <div className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${isActive ? "translate-x-5" : "translate-x-0"}`} />
-                </div>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-400">
-                  {isActive ? "Đang hoạt động" : "Đang ẩn"}
-                </span>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                Nội dung (VI)
               </label>
+              <textarea
+                value={contentVi}
+                onChange={(e) => setContentVi(e.target.value)}
+                rows={5}
+                placeholder="Nội dung tiếng Việt"
+                className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
+              />
             </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                Nội dung (EN)
+              </label>
+              <textarea
+                value={contentEn}
+                onChange={(e) => setContentEn(e.target.value)}
+                rows={5}
+                placeholder="Content in English"
+                className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500"
+              />
+            </div>
+          </div>
 
-            <div className="flex gap-3 pt-2">
-              <button
-                type="submit"
-                disabled={loading}
-                className="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-600 disabled:opacity-60"
-              >
-                {loading ? "Đang lưu..." : mode === "create" ? "Tạo tin tức" : "Lưu thay đổi"}
-              </button>
-              <Link
-                href="/news"
-                className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
-              >
-                Hủy
-              </Link>
-            </div>
-          </form>
-        </div>
+          {/* Active toggle */}
+          <div>
+            <label className="flex cursor-pointer items-center gap-3">
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  className="sr-only"
+                  checked={isActive}
+                  onChange={(e) => setIsActive(e.target.checked)}
+                />
+                <div className={`h-6 w-11 rounded-full transition-colors ${isActive ? "bg-brand-500" : "bg-gray-300 dark:bg-gray-600"}`} />
+                <div className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${isActive ? "translate-x-5" : "translate-x-0"}`} />
+              </div>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-400">
+                {isActive ? "Đang hoạt động" : "Đang ẩn"}
+              </span>
+            </label>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-2">
+            <button
+              type="submit"
+              disabled={loading}
+              className="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-600 disabled:opacity-60"
+            >
+              {loading ? "Đang lưu..." : mode === "create" ? "Tạo tin tức" : "Lưu thay đổi"}
+            </button>
+            <Link
+              href="/news"
+              className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+            >
+              Hủy
+            </Link>
+          </div>
+        </form>
       </div>
     </div>
   );
