@@ -752,8 +752,6 @@ export interface News {
   isActive: boolean;
   sortOrder: number;
   type: string;
-  category: string | null;
-  year: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -766,7 +764,6 @@ export interface NewsResponse {
 export interface NewsFilters {
   title?: string;
   type?: string;
-  category?: string;
   isActive?: boolean;
 }
 
@@ -780,7 +777,6 @@ export async function getNews(
       pageNumber,
       pageSize,
       type: filters.type,
-      category: filters.category,
       title: filters.title,
       isActive: filters.isActive,
     })}`
@@ -811,8 +807,6 @@ export interface NewsPayload {
   isActive: boolean;
   sortOrder: number;
   type: string;
-  category?: string;
-  year?: number;
 }
 
 export async function createNews(data: NewsPayload): Promise<News> {
