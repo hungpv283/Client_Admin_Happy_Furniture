@@ -32,7 +32,7 @@ type ImageEntry = {
   imageId?: number;       // ID của ProductImage khi load từ API (edit mode)
 };
 
-const newEntry = (): ImageEntry => ({ mode: "url", url: "", file: null, preview: "" });
+const newEntry = (): ImageEntry => ({ mode: "file", url: "", file: null, preview: "" });
 
 export default function ProductForm({ mode, productId }: Props) {
   const router = useRouter();
@@ -106,7 +106,9 @@ export default function ProductForm({ mode, productId }: Props) {
         setSelectedParentCategoryIds(product.categories.filter((x) => x.parentId == null).map((x) => x.id));
         setSelectedChildCategoryIds(product.categories.filter((x) => x.parentId != null).map((x) => x.id));
         setSelectedMaterialIds(product.materials?.map((x) => x.id) ?? product.materialIds ?? []);
-        const validImages = product.images.filter((img) => img.imageUrl);
+        const validImages = product.images
+          .filter((img) => img.imageUrl)
+          .sort((a, b) => a.id - b.id);
         if (validImages.length) {
           setImages(
             validImages.map((img) => ({
@@ -315,9 +317,9 @@ export default function ProductForm({ mode, productId }: Props) {
               <h2 className="mb-5 font-semibold text-gray-800 dark:text-white/90">Kích thước & Trọng lượng</h2>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 {[
-                  { label: "Chiều cao", value: dimensionsHeight, set: setDimensionsHeight },
+                  { label: "Chiều dài", value: dimensionsDepth, set: setDimensionsDepth },
                   { label: "Chiều rộng", value: dimensionsWidth, set: setDimensionsWidth },
-                  { label: "Chiều sâu", value: dimensionsDepth, set: setDimensionsDepth },
+                  { label: "Chiều cao", value: dimensionsHeight, set: setDimensionsHeight },
                 ].map(({ label, value, set }) => (
                   <div key={label}>
                     <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">{label}</label>
