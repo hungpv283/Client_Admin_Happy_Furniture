@@ -736,3 +736,99 @@ export async function deleteAssembly(id: number): Promise<void> {
 export async function getActiveAssemblies(): Promise<Assembly[]> {
   return request<Assembly[]>("/Assemblies/active");
 }
+
+// ─── News ────────────────────────────────────────────────────────────────────────
+
+export interface News {
+  id: number;
+  titleVi: string;
+  titleEn: string | null;
+  slug: string;
+  contentVi: string | null;
+  contentEn: string | null;
+  imageUrl: string | null;
+  excerptVi: string | null;
+  excerptEn: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  type: string;
+  category: string | null;
+  year: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NewsResponse {
+  events: News[];
+  activities: News[];
+}
+
+export interface NewsFilters {
+  title?: string;
+  type?: string;
+  category?: string;
+  isActive?: boolean;
+}
+
+export async function getNews(
+  pageNumber = 1,
+  pageSize = 10,
+  filters: NewsFilters = {}
+): Promise<{ items: News[]; total: number; page: number; pageSize: number }> {
+  return request<{ items: News[]; total: number; page: number; pageSize: number }>(
+    `/News${buildQueryString({
+      pageNumber,
+      pageSize,
+      type: filters.type,
+      category: filters.category,
+      title: filters.title,
+      isActive: filters.isActive,
+    })}`
+  );
+}
+
+export async function getActiveNews(): Promise<NewsResponse> {
+  return request<NewsResponse>("/News/active");
+}
+
+export async function getNewsById(id: number): Promise<News> {
+  return request<News>(`/News/${id}`);
+}
+
+export async function getNewsBySlug(slug: string): Promise<News> {
+  return request<News>(`/News/slug/${slug}`);
+}
+
+export interface NewsPayload {
+  titleVi: string;
+  titleEn?: string;
+  slug: string;
+  contentVi?: string;
+  contentEn?: string;
+  imageUrl?: string;
+  excerptVi?: string;
+  excerptEn?: string;
+  isActive: boolean;
+  sortOrder: number;
+  type: string;
+  category?: string;
+  year?: number;
+}
+
+export async function createNews(data: NewsPayload): Promise<News> {
+  return request<News>("/News", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateNews(id: number, data: NewsPayload): Promise<News> {
+  return request<News>(`/News/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteNews(id: number): Promise<void> {
+  return request<void>(`/News/${id}`, { method: "DELETE" });
+}
