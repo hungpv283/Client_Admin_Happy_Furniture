@@ -8,8 +8,8 @@ import { useToast } from "@/components/ui/toast/Toast";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 const NEWS_TYPE_LABELS: Record<string, string> = {
-  Event: "Sự kiện",
-  Activity: "Hoạt động",
+  News: "Tin tức",
+  CompanyActivity: "Hoạt động công ty",
 };
 
 export default function NewsTable() {
@@ -141,8 +141,8 @@ export default function NewsTable() {
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
             >
               <option value="">Tất cả</option>
-              <option value="Event">Sự kiện</option>
-              <option value="Activity">Hoạt động</option>
+              <option value="News">Tin tức</option>
+              <option value="CompanyActivity">Hoạt động công ty</option>
             </select>
           </div>
           <div>
@@ -219,7 +219,7 @@ export default function NewsTable() {
                       <span className="rounded bg-gray-100 px-2 py-0.5 font-mono text-xs dark:bg-white/10">{item.slug}</span>
                     </td>
                     <td className="px-5 py-4">
-                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${item.type === "Event"
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${item.type === "News"
                           ? "bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400"
                           : "bg-purple-50 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400"
                         }`}>

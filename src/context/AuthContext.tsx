@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { LoginResponse } from "@/lib/api";
 
@@ -20,16 +20,32 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setToken] = useState<string | null>(() =>
-    typeof window !== "undefined" ? sessionStorage.getItem("hf_token") : null
-  );
-  const [user, setUser] = useState<LoginResponse["user"] | null>(() => {
-    if (typeof window === "undefined") return null;
-    const stored = sessionStorage.getItem("hf_user");
-    return stored ? JSON.parse(stored) : null;
-  });
-  const [isLoading] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<LoginResponse["user"] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+
+  useEffect(() => {
+    const storedToken = sessionStorage.getItem("hf_token");
+    const storedUser = sessionStorage.getItem("hf_user");
+
+    setToken(storedToken);
+
+    if (!storedUser) {
+      setUser(null);
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setUser(JSON.parse(storedUser));
+    } catch {
+      sessionStorage.removeItem("hf_user");
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   const login = (data: LoginResponse) => {
     sessionStorage.setItem("hf_token", data.token);
