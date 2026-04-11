@@ -739,14 +739,32 @@ export async function getActiveAssemblies(): Promise<Assembly[]> {
 
 // ─── News ────────────────────────────────────────────────────────────────────────
 
+export interface ContentBlock {
+  id: number;
+  newsId: number;
+  type: "Text" | "Image";
+  titleVi: string | null;
+  titleEn: string | null;
+  contentVi: string | null;
+  contentEn: string | null;
+  imageUrl: string | null;
+  imageAltVi: string | null;
+  imageAltEn: string | null;
+  sortOrder: number;
+  isFullWidth: boolean;
+}
+
 export interface News {
   id: number;
   titleVi: string;
   titleEn: string | null;
   slug: string;
-  contentVi: string | null;
-  contentEn: string | null;
+  metaTitleVi: string | null;
+  metaTitleEn: string | null;
+  metaDescriptionVi: string | null;
+  metaDescriptionEn: string | null;
   imageUrl: string | null;
+  bannerUrl: string | null;
   excerptVi: string | null;
   excerptEn: string | null;
   isActive: boolean;
@@ -756,9 +774,13 @@ export interface News {
   updatedAt: string;
 }
 
+export interface NewsDetail extends News {
+  contentBlocks: ContentBlock[];
+}
+
 export interface NewsResponse {
-  events: News[];
-  activities: News[];
+  news: News[];
+  companyActivities: News[];
 }
 
 export interface NewsFilters {
@@ -767,14 +789,45 @@ export interface NewsFilters {
   isActive?: boolean;
 }
 
+export interface ContentBlockPayload {
+  type: "Text" | "Image";
+  titleVi?: string;
+  titleEn?: string;
+  contentVi?: string;
+  contentEn?: string;
+  imageUrl?: string;
+  imageAltVi?: string;
+  imageAltEn?: string;
+  sortOrder: number;
+  isFullWidth: boolean;
+}
+
+export interface NewsPayload {
+  titleVi: string;
+  titleEn?: string;
+  slug: string;
+  metaTitleVi?: string;
+  metaTitleEn?: string;
+  metaDescriptionVi?: string;
+  metaDescriptionEn?: string;
+  imageUrl?: string;
+  bannerUrl?: string;
+  excerptVi?: string;
+  excerptEn?: string;
+  isActive: boolean;
+  sortOrder: number;
+  type: string;
+  contentBlocks: ContentBlockPayload[];
+}
+
 export async function getNews(
-  pageNumber = 1,
+  page = 1,
   pageSize = 10,
   filters: NewsFilters = {}
 ): Promise<{ items: News[]; total: number; page: number; pageSize: number }> {
   return request<{ items: News[]; total: number; page: number; pageSize: number }>(
-    `/News${buildQueryString({
-      pageNumber,
+    `/News/admin/all${buildQueryString({
+      page,
       pageSize,
       type: filters.type,
       title: filters.title,
@@ -784,40 +837,26 @@ export async function getNews(
 }
 
 export async function getActiveNews(): Promise<NewsResponse> {
-  return request<NewsResponse>("/News/active");
+  return request<NewsResponse>("/News");
 }
 
-export async function getNewsById(id: number): Promise<News> {
-  return request<News>(`/News/${id}`);
+export async function getNewsById(id: number): Promise<NewsDetail> {
+  return request<NewsDetail>(`/News/${id}`);
 }
 
-export async function getNewsBySlug(slug: string): Promise<News> {
-  return request<News>(`/News/slug/${slug}`);
+export async function getNewsBySlug(slug: string): Promise<NewsDetail> {
+  return request<NewsDetail>(`/News/slug/${slug}`);
 }
 
-export interface NewsPayload {
-  titleVi: string;
-  titleEn?: string;
-  slug: string;
-  contentVi?: string;
-  contentEn?: string;
-  imageUrl?: string;
-  excerptVi?: string;
-  excerptEn?: string;
-  isActive: boolean;
-  sortOrder: number;
-  type: string;
-}
-
-export async function createNews(data: NewsPayload): Promise<News> {
-  return request<News>("/News", {
+export async function createNews(data: NewsPayload): Promise<NewsDetail> {
+  return request<NewsDetail>("/News", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
-export async function updateNews(id: number, data: NewsPayload): Promise<News> {
-  return request<News>(`/News/${id}`, {
+export async function updateNews(id: number, data: NewsPayload): Promise<NewsDetail> {
+  return request<NewsDetail>(`/News/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
   });
