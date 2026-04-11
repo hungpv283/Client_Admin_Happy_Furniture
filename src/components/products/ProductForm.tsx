@@ -16,6 +16,7 @@ import {
 } from "@/lib/api";
 import type { Assembly, Category, Material } from "@/lib/api";
 import { useToast } from "@/components/ui/toast/Toast";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 interface Props {
   mode: "create" | "edit";
@@ -63,6 +64,7 @@ export default function ProductForm({ mode, productId }: Props) {
   const [selectedChildCategoryIds, setSelectedChildCategoryIds] = useState<number[]>([]);
   const [selectedMaterialIds, setSelectedMaterialIds] = useState<number[]>([]);
   const [images, setImages] = useState<ImageEntry[]>([newEntry()]);
+  const [confirmRemoveImageIndex, setConfirmRemoveImageIndex] = useState<number | null>(null);
 
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [rootCategories, setRootCategories] = useState<Category[]>([]);
@@ -156,6 +158,10 @@ export default function ProductForm({ mode, productId }: Props) {
     });
   };
 
+  const removeImageAt = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+    setConfirmRemoveImageIndex(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -261,6 +267,18 @@ export default function ProductForm({ mode, productId }: Props) {
 
   return (
     <div>
+      <ConfirmDialog
+        open={confirmRemoveImageIndex !== null}
+        title="Xoá ảnh sản phẩm"
+        message={
+          confirmRemoveImageIndex !== null
+            ? `Xoá ảnh #${confirmRemoveImageIndex + 1} khỏi danh sách? Hành động này chỉ áp dụng sau khi bạn lưu sản phẩm.`
+            : ""
+        }
+        confirmLabel="Xoá"
+        onConfirm={() => confirmRemoveImageIndex !== null && removeImageAt(confirmRemoveImageIndex)}
+        onCancel={() => setConfirmRemoveImageIndex(null)}
+      />
       <div className="mb-6 flex items-center gap-3">
         <Link href="/products" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
@@ -354,7 +372,18 @@ export default function ProductForm({ mode, productId }: Props) {
                             <button type="button" onClick={() => updateImage(index, { mode: "file", url: "", file: null, preview: "" })} className={`px-3 py-1.5 font-medium transition-colors ${entry.mode === "file" ? "bg-brand-500 text-white" : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5"}`}>Từ máy</button>
                           </div>
                         )}
-                        {images.length > 1 && <button type="button" onClick={() => setImages((prev) => prev.filter((_, i) => i !== index))} className="rounded-lg p-1.5 text-error-500 transition-colors hover:bg-error-50 dark:hover:bg-error-500/15"><svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>}
+                        {images.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => setConfirmRemoveImageIndex(index)}
+                            className="rounded-lg p-1.5 text-error-500 transition-colors hover:bg-error-50 dark:hover:bg-error-500/15"
+                            title="Xoá ảnh này"
+                          >
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
                       </div>
                     </div>
                     {entry.mode === "url" ? (

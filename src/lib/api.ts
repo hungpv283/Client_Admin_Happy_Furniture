@@ -1,6 +1,6 @@
-const BASE_URL = "https://happyfurniture-huexcrecemgaesdy.southeastasia-01.azurewebsites.net/api";
+// const BASE_URL = "https://happyfurniture-huexcrecemgaesdy.southeastasia-01.azurewebsites.net/api";
 
-// const BASE_URL = "https://localhost:7290/api"
+const BASE_URL = "http://localhost:5238/api"
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -389,6 +389,30 @@ async function requestMultipart<T>(
   return res.json();
 }
 
+// ─── Single Image Upload ──────────────────────────────────────────────────────
+
+export interface UploadImageResult {
+  imageUrl: string;
+  fileName: string;
+  fileSize: number;
+  contentType: string;
+}
+
+/**
+ * Upload một ảnh lên Cloudinary.
+ * folder: "products" | "categories" | "product-variants" | "product-images" | "news"
+ */
+export async function uploadSingleImage(
+  file: File,
+  folder: string = "news"
+): Promise<UploadImageResult> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return requestMultipart<UploadImageResult>(`/Upload/image?folder=${encodeURIComponent(folder)}`, formData);
+}
+
+// ─── Product with Images ──────────────────────────────────────────────────────
+
 export interface CreateProductWithImagesData extends Partial<ProductDeliveryFields> {
   name: string;
   nameEn?: string;
@@ -750,6 +774,8 @@ export interface ContentBlock {
   imageUrl: string | null;
   imageAltVi: string | null;
   imageAltEn: string | null;
+  /** "full" | "left" | "right" — chỉ dùng khi type = Image */
+  imagePosition: "full" | "left" | "right" | null;
   sortOrder: number;
   isFullWidth: boolean;
 }
@@ -798,6 +824,8 @@ export interface ContentBlockPayload {
   imageUrl?: string;
   imageAltVi?: string;
   imageAltEn?: string;
+  /** "full" | "left" | "right" — chỉ dùng khi type = Image */
+  imagePosition?: "full" | "left" | "right";
   sortOrder: number;
   isFullWidth: boolean;
 }

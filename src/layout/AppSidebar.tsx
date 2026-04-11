@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "../context/SidebarContext";
 import { useAuth } from "../context/AuthContext";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import {
   BoxCubeIcon,
   ChevronDownIcon,
@@ -72,6 +73,7 @@ const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const pathname = usePathname();
   const { logout, user } = useAuth();
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";
@@ -261,6 +263,20 @@ const AppSidebar: React.FC = () => {
         </nav>
       </div>
 
+      <ConfirmDialog
+        open={logoutConfirmOpen}
+        title="Đăng xuất"
+        message="Bạn có chắc muốn đăng xuất khỏi trang quản trị? Cần đăng nhập lại để tiếp tục."
+        confirmLabel="Đăng xuất"
+        cancelLabel="Ở lại"
+        variant="warning"
+        onConfirm={() => {
+          setLogoutConfirmOpen(false);
+          logout();
+        }}
+        onCancel={() => setLogoutConfirmOpen(false)}
+      />
+
       {/* Logout */}
       <div className="pb-6 border-t border-gray-200 dark:border-gray-800 pt-4">
         {(isExpanded || isHovered || isMobileOpen) && (
@@ -274,7 +290,8 @@ const AppSidebar: React.FC = () => {
           </div>
         )}
         <button
-          onClick={logout}
+          type="button"
+          onClick={() => setLogoutConfirmOpen(true)}
           className={`menu-item group menu-item-inactive w-full ${!isExpanded && !isHovered ? "lg:justify-center" : "lg:justify-start"
             }`}
         >
