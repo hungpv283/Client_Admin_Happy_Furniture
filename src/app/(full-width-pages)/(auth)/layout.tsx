@@ -20,17 +20,25 @@ export default function AuthLayout({
             <div className="relative items-center justify-center  flex z-1">
               {/* <!-- ===== Common Grid Shape Start ===== --> */}
               <GridShape />
-              <div className="flex flex-col items-center max-w-xs">
-                <Link href="/" className="block mb-4">
+              <div className="flex flex-col items-center max-w-sm px-4">
+                <Link
+                  href="/"
+                  className="mb-6 block w-full rounded-2xl bg-white px-5 py-6 shadow-xl shadow-black/20 ring-1 ring-black/5 dark:bg-stone-50 dark:ring-white/10"
+                >
                   <Image
-                    width={231}
-                    height={48}
-                    src="./images/logo/auth-logo.svg"
-                    alt="Logo"
+                    src="/images/logo-brown.png"
+                    alt="Happy Furniture"
+                    width={320}
+                    height={90}
+                    className="mx-auto h-auto w-full max-w-[280px] object-contain"
+                    priority
                   />
                 </Link>
-                <p className="text-center text-gray-400 dark:text-white/60">
-                  Free and Open-Source Tailwind CSS Admin Dashboard Template
+                <p className="text-center text-sm leading-relaxed text-gray-400 dark:text-white/70">
+                  <span className="font-semibold text-white/90">Happy Furniture</span> — nội thất cho cuộc sống tiện nghi hơn. Trang quản trị giúp bạn đồng bộ nội dung và sản phẩm với website thương hiệu.
+                </p>
+                <p className="mt-3 text-center text-xs italic text-gray-500 dark:text-white/45">
+                  Make life more convenient
                 </p>
               </div>
             </div>

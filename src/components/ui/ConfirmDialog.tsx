@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -25,6 +26,11 @@ export default function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps) {
   const [visible, setVisible] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -47,16 +53,19 @@ export default function ConfirmDialog({
       ? "bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-400"
       : "bg-yellow-100 dark:bg-yellow-500/15 text-yellow-600 dark:text-yellow-400";
 
-  return (
-    /* Backdrop */
+  const content = (
+    /* Backdrop — portal ra body để luôn căn giữa viewport (tránh fixed bị ảnh hưởng bởi transform ở sidebar) */
     <div
-      className={`fixed inset-0 z-9999 flex items-center justify-center p-4 transition-all duration-200 ${
+      className={`fixed inset-0 z-[10050] flex items-center justify-center p-4 transition-all duration-200 ${
         visible ? "bg-black/40 backdrop-blur-sm" : "bg-black/0"
       }`}
       onClick={onCancel}
+      role="presentation"
     >
       {/* Dialog panel */}
       <div
+        role="dialog"
+        aria-modal="true"
         onClick={(e) => e.stopPropagation()}
         className={`w-full max-w-sm rounded-2xl bg-white dark:bg-gray-900 shadow-2xl transition-all duration-200 ${
           visible ? "opacity-100 scale-100" : "opacity-0 scale-95"
@@ -116,4 +125,8 @@ export default function ConfirmDialog({
       </div>
     </div>
   );
+
+  if (!mounted || typeof document === "undefined") return null;
+
+  return createPortal(content, document.body);
 }

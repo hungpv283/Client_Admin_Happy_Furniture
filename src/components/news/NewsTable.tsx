@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { deleteNews, getNews } from "@/lib/api";
 import type { News, NewsFilters } from "@/lib/api";
@@ -14,6 +14,8 @@ const NEWS_TYPE_LABELS: Record<string, string> = {
 
 export default function NewsTable() {
   const { success, error: toastError } = useToast();
+  const toastErrorRef = useRef(toastError);
+  toastErrorRef.current = toastError;
   const [items, setItems] = useState<News[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -35,11 +37,11 @@ export default function NewsTable() {
       setTotal(data.total);
       setTotalPages(Math.ceil(data.total / pageSize));
     } catch (err: unknown) {
-      toastError(err instanceof Error ? err.message : "Lỗi tải dữ liệu");
+      toastErrorRef.current(err instanceof Error ? err.message : "Lỗi tải dữ liệu");
     } finally {
       setLoading(false);
     }
-  }, [appliedFilters, page, toastError]);
+  }, [appliedFilters, page]);
 
   useEffect(() => {
     fetchNews();
