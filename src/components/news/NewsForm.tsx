@@ -89,7 +89,6 @@ interface DraggableBlockWrapperProps {
 
 function DraggableBlockWrapper({ index, moveBlock, children }: DraggableBlockWrapperProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const handleRef = useRef<HTMLDivElement>(null);
 
   const [{ isDragging }, drag, dragPreview] = useDrag({
     type: DRAG_TYPE,
@@ -119,12 +118,18 @@ function DraggableBlockWrapper({ index, moveBlock, children }: DraggableBlockWra
     },
   });
 
-  drag(handleRef);
-  drop(dragPreview(ref));
+  const handleRef = useCallback((node: HTMLDivElement | null) => {
+    drag(node);
+  }, [drag]);
+
+  const previewRef = useCallback((node: HTMLDivElement | null) => {
+    ref.current = node;
+    drop(dragPreview(node));
+  }, [dragPreview, drop]);
 
   return (
     <div
-      ref={ref}
+      ref={previewRef}
       className={`transition-opacity ${isDragging ? "opacity-30" : "opacity-100"}`}
     >
       {children(handleRef, isDragging)}
