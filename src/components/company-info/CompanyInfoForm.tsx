@@ -22,6 +22,7 @@ export default function CompanyInfoForm({ mode, companyInfoId }: Props) {
   const [phoneEn, setPhoneEn] = useState("");
   const [faxVi, setFaxVi] = useState("");
   const [faxEn, setFaxEn] = useState("");
+  const [sortOrder, setSortOrder] = useState(0);
   const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(mode === "edit");
@@ -39,6 +40,7 @@ export default function CompanyInfoForm({ mode, companyInfoId }: Props) {
         setPhoneEn(item.phoneEn ?? "");
         setFaxVi(item.faxVi ?? "");
         setFaxEn(item.faxEn ?? "");
+        setSortOrder(item.sortOrder ?? 0);
         setIsActive(item.isActive);
       })
       .catch(() => toastError("Không thể tải thông tin"))
@@ -58,6 +60,7 @@ export default function CompanyInfoForm({ mode, companyInfoId }: Props) {
         phoneEn: phoneEn.trim() || undefined,
         faxVi: faxVi.trim() || undefined,
         faxEn: faxEn.trim() || undefined,
+        sortOrder,
         isActive,
       };
 
@@ -199,33 +202,45 @@ export default function CompanyInfoForm({ mode, companyInfoId }: Props) {
             </div>
           </div>
 
-          {/* Trạng thái */}
-          <div>
-            <label className={labelCls}>Trạng thái</label>
-            <div className="mt-1">
-              <label className="flex cursor-pointer items-center gap-3">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    className="sr-only"
-                    checked={isActive}
-                    onChange={(e) => setIsActive(e.target.checked)}
-                  />
-                  <div
-                    className={`h-6 w-11 rounded-full transition-colors ${
-                      isActive ? "bg-brand-500" : "bg-gray-300 dark:bg-gray-600"
-                    }`}
-                  />
-                  <div
-                    className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                      isActive ? "translate-x-5" : "translate-x-0"
-                    }`}
-                  />
-                </div>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-400">
-                  {isActive ? "Đang hiển thị" : "Đang ẩn"}
-                </span>
-              </label>
+          {/* Thứ tự + Trạng thái */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className={labelCls}>Thứ tự sắp xếp</label>
+              <input
+                type="number"
+                value={sortOrder}
+                onChange={(e) => setSortOrder(parseInt(e.target.value, 10) || 0)}
+                min="0"
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Trạng thái</label>
+              <div className="mt-1">
+                <label className="flex cursor-pointer items-center gap-3">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      className="sr-only"
+                      checked={isActive}
+                      onChange={(e) => setIsActive(e.target.checked)}
+                    />
+                    <div
+                      className={`h-6 w-11 rounded-full transition-colors ${
+                        isActive ? "bg-brand-500" : "bg-gray-300 dark:bg-gray-600"
+                      }`}
+                    />
+                    <div
+                      className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                        isActive ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </div>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-400">
+                    {isActive ? "Đang hiển thị" : "Đang ẩn"}
+                  </span>
+                </label>
+              </div>
             </div>
           </div>
 

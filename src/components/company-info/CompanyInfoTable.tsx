@@ -171,6 +171,7 @@ export default function CompanyInfoTable() {
                 <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Email</th>
                 <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Điện thoại</th>
                 <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Fax</th>
+                <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Thứ tự</th>
                 <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Trạng thái</th>
                 <th className="px-5 py-4 text-right font-semibold text-gray-600 dark:text-gray-400">Thao tác</th>
               </tr>
@@ -212,6 +213,7 @@ export default function CompanyInfoTable() {
                       {item.faxEn && <div>EN: {item.faxEn}</div>}
                       {!item.faxVi && !item.faxEn && "-"}
                     </td>
+                    <td className="px-5 py-4 text-gray-500 dark:text-gray-400">{item.sortOrder}</td>
                     <td className="px-5 py-4">
                       <span
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
