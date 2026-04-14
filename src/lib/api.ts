@@ -982,6 +982,7 @@ export interface CompanyInfoType {
   phoneEn: string | null;
   faxVi: string | null;
   faxEn: string | null;
+  sortOrder: number;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -1000,6 +1001,7 @@ export interface CompanyInfoPayload {
   phoneEn?: string;
   faxVi?: string;
   faxEn?: string;
+  sortOrder?: number;
   isActive: boolean;
 }
 
