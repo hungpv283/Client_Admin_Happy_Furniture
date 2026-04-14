@@ -1,8 +1,8 @@
-const BASE_URL = "https://happyfurniture-huexcrecemgaesdy.southeastasia-01.azurewebsites.net/api";
+// const BASE_URL = "https://happyfurniture-huexcrecemgaesdy.southeastasia-01.azurewebsites.net/api";
 
 // const BASE_URL = "http://localhost:5238/api"
 
-// const BASE_URL = "https://localhost:7290/api"
+const BASE_URL = "https://localhost:7290/api"
 
 
 function getToken(): string | null {
@@ -969,4 +969,80 @@ export async function updateCertificate(
 
 export async function deleteCertificate(id: number): Promise<void> {
   return request<void>(`/Certificates/${id}`, { method: "DELETE" });
+}
+
+// ─── CompanyInfo ─────────────────────────────────────────────────────────────
+
+export interface CompanyInfoType {
+  id: number;
+  nameVi: string;
+  nameEn: string | null;
+  email: string | null;
+  phoneVi: string | null;
+  phoneEn: string | null;
+  faxVi: string | null;
+  faxEn: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CompanyInfoFilters {
+  name?: string;
+  isActive?: boolean;
+}
+
+export interface CompanyInfoPayload {
+  nameVi: string;
+  nameEn?: string;
+  email?: string;
+  phoneVi?: string;
+  phoneEn?: string;
+  faxVi?: string;
+  faxEn?: string;
+  isActive: boolean;
+}
+
+export async function getCompanyInfos(
+  page = 1,
+  pageSize = 10,
+  filters: CompanyInfoFilters = {}
+): Promise<{ items: CompanyInfoType[]; total: number; page: number; pageSize: number }> {
+  return request<{ items: CompanyInfoType[]; total: number; page: number; pageSize: number }>(
+    `/CompanyInfo/admin/all${buildQueryString({
+      page,
+      pageSize,
+      name: filters.name,
+      isActive: filters.isActive,
+    })}`
+  );
+}
+
+export async function getActiveCompanyInfos(): Promise<CompanyInfoType[]> {
+  return request<CompanyInfoType[]>("/CompanyInfo");
+}
+
+export async function getCompanyInfoById(id: number): Promise<CompanyInfoType> {
+  return request<CompanyInfoType>(`/CompanyInfo/${id}`);
+}
+
+export async function createCompanyInfo(data: CompanyInfoPayload): Promise<CompanyInfoType> {
+  return request<CompanyInfoType>("/CompanyInfo", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateCompanyInfo(
+  id: number,
+  data: CompanyInfoPayload
+): Promise<CompanyInfoType> {
+  return request<CompanyInfoType>(`/CompanyInfo/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteCompanyInfo(id: number): Promise<void> {
+  return request<void>(`/CompanyInfo/${id}`, { method: "DELETE" });
 }

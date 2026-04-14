@@ -75,6 +75,14 @@ const navItems: NavItem[] = [
       { name: "Thêm mới", path: "/certificates/create" },
     ],
   },
+  {
+    icon: <FileIcon />,
+    name: "Thông tin công ty",
+    subItems: [
+      { name: "Danh sách", path: "/company-info" },
+      { name: "Thêm mới", path: "/company-info/create" },
+    ],
+  },
 ];
 
 const AppSidebar: React.FC = () => {
