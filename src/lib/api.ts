@@ -1,8 +1,8 @@
-// const BASE_URL = "https://happyfurniture-huexcrecemgaesdy.southeastasia-01.azurewebsites.net/api";
+const BASE_URL = "https://happyfurniture-huexcrecemgaesdy.southeastasia-01.azurewebsites.net/api";
 
 // const BASE_URL = "http://localhost:5238/api"
 
-const BASE_URL = "https://localhost:7290/api"
+// const BASE_URL = "https://localhost:7290/api"
 
 
 function getToken(): string | null {
