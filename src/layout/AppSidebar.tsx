@@ -12,6 +12,7 @@ import {
   HorizontaLDots,
   ListIcon,
   FileIcon,
+  ChatIcon,
 } from "../icons/index";
 
 type NavItem = {
@@ -82,6 +83,11 @@ const navItems: NavItem[] = [
       { name: "Danh sách", path: "/company-info" },
       { name: "Thêm mới", path: "/company-info/create" },
     ],
+  },
+  {
+    icon: <ChatIcon />,
+    name: "Liên hệ",
+    path: "/contacts",
   },
 ];
 

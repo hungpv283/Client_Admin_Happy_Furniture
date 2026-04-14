@@ -1,8 +1,8 @@
-// const BASE_URL = "https://happyfurniture-huexcrecemgaesdy.southeastasia-01.azurewebsites.net/api";
+const BASE_URL = "https://happyfurniture-huexcrecemgaesdy.southeastasia-01.azurewebsites.net/api";
 
 // const BASE_URL = "http://localhost:5238/api"
 
-const BASE_URL = "https://localhost:7290/api"
+// const BASE_URL = "https://localhost:7290/api"
 
 
 function getToken(): string | null {
@@ -33,7 +33,9 @@ async function request<T>(
   }
 
   if (res.status === 204) return {} as T;
-  return res.json();
+  const json = await res.json();
+  if (Array.isArray(json)) return { items: json, total: json.length } as T;
+  return json;
 }
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
@@ -168,7 +170,8 @@ export async function deleteCategory(id: number): Promise<void> {
 }
 
 export async function getRootCategories(): Promise<Category[]> {
-  return request<Category[]>("/Categories/root");
+  const data = await request<{ items: Category[]; total: number }>("/Categories/root");
+  return data.items ?? (Array.isArray(data) ? data : []);
 }
 
 // ─── Products ────────────────────────────────────────────────────────────────
@@ -855,14 +858,14 @@ export async function getNews(
   page = 1,
   pageSize = 10,
   filters: NewsFilters = {}
-): Promise<{ items: News[]; total: number; page: number; pageSize: number }> {
-  return request<{ items: News[]; total: number; page: number; pageSize: number }>(
+): Promise<PaginatedResponse<News>> {
+  return request<PaginatedResponse<News>>(
     `/News/admin/all${buildQueryString({
-      page,
-      pageSize,
-      type: filters.type,
-      title: filters.title,
-      isActive: filters.isActive,
+      PageNumber: page,
+      PageSize: pageSize,
+      Type: filters.type,
+      Title: filters.title,
+      IsActive: filters.isActive,
     })}`
   );
 }
@@ -931,13 +934,13 @@ export async function getCertificates(
   page = 1,
   pageSize = 10,
   filters: CertificateFilters = {}
-): Promise<{ items: Certificate[]; total: number; page: number; pageSize: number }> {
-  return request<{ items: Certificate[]; total: number; page: number; pageSize: number }>(
+): Promise<PaginatedResponse<Certificate>> {
+  return request<PaginatedResponse<Certificate>>(
     `/Certificates/admin/all${buildQueryString({
-      page,
-      pageSize,
-      name: filters.name,
-      isActive: filters.isActive,
+      PageNumber: page,
+      PageSize: pageSize,
+      Name: filters.name,
+      IsActive: filters.isActive,
     })}`
   );
 }
@@ -1009,13 +1012,13 @@ export async function getCompanyInfos(
   page = 1,
   pageSize = 10,
   filters: CompanyInfoFilters = {}
-): Promise<{ items: CompanyInfoType[]; total: number; page: number; pageSize: number }> {
-  return request<{ items: CompanyInfoType[]; total: number; page: number; pageSize: number }>(
+): Promise<PaginatedResponse<CompanyInfoType>> {
+  return request<PaginatedResponse<CompanyInfoType>>(
     `/CompanyInfo/admin/all${buildQueryString({
-      page,
-      pageSize,
-      name: filters.name,
-      isActive: filters.isActive,
+      PageNumber: page,
+      PageSize: pageSize,
+      Name: filters.name,
+      IsActive: filters.isActive,
     })}`
   );
 }
@@ -1047,4 +1050,59 @@ export async function updateCompanyInfo(
 
 export async function deleteCompanyInfo(id: number): Promise<void> {
   return request<void>(`/CompanyInfo/${id}`, { method: "DELETE" });
+}
+
+// ─── Contacts ─────────────────────────────────────────────────────────────────
+
+export interface Contact {
+  id: number;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  phoneNumber: string | null;
+  address: string | null;
+  isRead: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ContactsResponse {
+  items: Contact[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+}
+
+export interface ContactsFilters {
+  isRead?: boolean;
+}
+
+export async function getContacts(
+  page: number = 1,
+  pageSize: number = 20,
+  filters: ContactsFilters = {}
+): Promise<ContactsResponse> {
+  const params = new URLSearchParams();
+  params.append("PageNumber", String(page));
+  params.append("PageSize", String(pageSize));
+  if (filters.isRead !== undefined) {
+    params.append("IsRead", String(filters.isRead));
+  }
+  return request<ContactsResponse>(`/Contacts?${params.toString()}`);
+}
+
+export async function getContactById(id: number): Promise<Contact> {
+  return request<Contact>(`/Contacts/${id}`);
+}
+
+export async function markContactAsRead(id: number): Promise<void> {
+  return request<void>(`/Contacts/${id}/read`, { method: "PATCH" });
+}
+
+export async function deleteContact(id: number): Promise<void> {
+  return request<void>(`/Contacts/${id}`, { method: "DELETE" });
 }

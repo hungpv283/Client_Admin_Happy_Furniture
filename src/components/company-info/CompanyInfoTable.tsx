@@ -6,6 +6,7 @@ import { deleteCompanyInfo, getCompanyInfos } from "@/lib/api";
 import type { CompanyInfoType, CompanyInfoFilters } from "@/lib/api";
 import { useToast } from "@/components/ui/toast/Toast";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import Pagination from "@/components/ui/Pagination";
 
 export default function CompanyInfoTable() {
   const { success, error: toastError } = useToast();
@@ -15,7 +16,7 @@ export default function CompanyInfoTable() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
   const pageSize = 10;
   const [filters, setFilters] = useState({ name: "", isActive: "" });
   const [appliedFilters, setAppliedFilters] = useState<CompanyInfoFilters>({});
@@ -29,8 +30,8 @@ export default function CompanyInfoTable() {
     try {
       const data = await getCompanyInfos(page, pageSize, appliedFilters);
       setItems(data.items);
-      setTotal(data.total);
-      setTotalPages(Math.ceil(data.total / pageSize));
+      setTotalCount(data.totalCount);
+      setTotalPages(data.totalPages);
     } catch (err: unknown) {
       toastErrorRef.current(err instanceof Error ? err.message : "Lỗi tải dữ liệu");
     } finally {
@@ -99,7 +100,7 @@ export default function CompanyInfoTable() {
         <div>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90">Thông tin công ty</h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Tổng cộng {total} mục
+            Tổng cộng {totalCount} mục
           </p>
         </div>
         <Link
@@ -256,27 +257,14 @@ export default function CompanyInfoTable() {
         </div>
 
         {totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-gray-200 px-5 py-4 dark:border-gray-800">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Trang {page} / {totalPages}
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-gray-700 dark:hover:bg-white/5"
-              >
-                Trước
-              </button>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-gray-700 dark:hover:bg-white/5"
-              >
-                Sau
-              </button>
-            </div>
-          </div>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            label="mục"
+          />
         )}
       </div>
     </div>
