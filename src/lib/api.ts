@@ -2,6 +2,9 @@ const BASE_URL = "https://happyfurniture-huexcrecemgaesdy.southeastasia-01.azure
 
 // const BASE_URL = "http://localhost:5238/api"
 
+// const BASE_URL = "https://localhost:7290/api"
+
+
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
   return sessionStorage.getItem("hf_token");
@@ -892,4 +895,78 @@ export async function updateNews(id: number, data: NewsPayload): Promise<NewsDet
 
 export async function deleteNews(id: number): Promise<void> {
   return request<void>(`/News/${id}`, { method: "DELETE" });
+}
+
+// ─── Certificates ─────────────────────────────────────────────────────────────
+
+export interface Certificate {
+  id: number;
+  nameVi: string;
+  nameEn: string | null;
+  descriptionVi: string | null;
+  descriptionEn: string | null;
+  logoUrl: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CertificateFilters {
+  name?: string;
+  isActive?: boolean;
+}
+
+export interface CertificatePayload {
+  nameVi: string;
+  nameEn?: string;
+  descriptionVi?: string;
+  descriptionEn?: string;
+  logoUrl?: string;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+export async function getCertificates(
+  page = 1,
+  pageSize = 10,
+  filters: CertificateFilters = {}
+): Promise<{ items: Certificate[]; total: number; page: number; pageSize: number }> {
+  return request<{ items: Certificate[]; total: number; page: number; pageSize: number }>(
+    `/Certificates/admin/all${buildQueryString({
+      page,
+      pageSize,
+      name: filters.name,
+      isActive: filters.isActive,
+    })}`
+  );
+}
+
+export async function getActiveCertificates(): Promise<Certificate[]> {
+  return request<Certificate[]>("/Certificates");
+}
+
+export async function getCertificateById(id: number): Promise<Certificate> {
+  return request<Certificate>(`/Certificates/${id}`);
+}
+
+export async function createCertificate(data: CertificatePayload): Promise<Certificate> {
+  return request<Certificate>("/Certificates", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateCertificate(
+  id: number,
+  data: CertificatePayload
+): Promise<Certificate> {
+  return request<Certificate>(`/Certificates/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteCertificate(id: number): Promise<void> {
+  return request<void>(`/Certificates/${id}`, { method: "DELETE" });
 }
