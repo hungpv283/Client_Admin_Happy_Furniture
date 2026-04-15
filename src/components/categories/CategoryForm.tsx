@@ -8,6 +8,7 @@ import {
   createCategory,
   createCategoryWithImage,
   updateCategory,
+  updateCategoryWithImage,
 } from "@/lib/api";
 import type { Category } from "@/lib/api";
 import { useToast } from "@/components/ui/toast/Toast";
@@ -116,6 +117,17 @@ export default function CategoryForm({ mode, categoryId }: Props) {
           parentId: parentId === "" ? null : Number(parentId),
           sortOrder: resolvedSortOrder,
           isActive,
+        });
+      } else if (mode === "edit" && imageFile) {
+        await updateCategoryWithImage(categoryId!, {
+          name,
+          nameEn: nameEn || undefined,
+          description: description || undefined,
+          descriptionEn: descriptionEn || undefined,
+          parentId: parentId === "" ? null : Number(parentId),
+          sortOrder: resolvedSortOrder,
+          isActive,
+          image: imageFile,
         });
       } else {
         await updateCategory(categoryId!, {
@@ -233,35 +245,33 @@ export default function CategoryForm({ mode, categoryId }: Props) {
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-400">
                   Hình ảnh
                 </label>
-                {mode === "create" && (
-                  <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-xs">
-                    <button
-                      type="button"
-                      onClick={() => handleImageModeSwitch("url")}
-                      className={`px-3 py-1.5 font-medium transition-colors ${
-                        imageMode === "url"
-                          ? "bg-brand-500 text-white"
-                          : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5"
-                      }`}
-                    >
-                      URL
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleImageModeSwitch("file")}
-                      className={`px-3 py-1.5 font-medium transition-colors ${
-                        imageMode === "file"
-                          ? "bg-brand-500 text-white"
-                          : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5"
-                      }`}
-                    >
-                      Từ máy
-                    </button>
-                  </div>
-                )}
+                <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-xs">
+                  <button
+                    type="button"
+                    onClick={() => handleImageModeSwitch("url")}
+                    className={`px-3 py-1.5 font-medium transition-colors ${
+                      imageMode === "url"
+                        ? "bg-brand-500 text-white"
+                        : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5"
+                    }`}
+                  >
+                    URL
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleImageModeSwitch("file")}
+                    className={`px-3 py-1.5 font-medium transition-colors ${
+                      imageMode === "file"
+                        ? "bg-brand-500 text-white"
+                        : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5"
+                    }`}
+                  >
+                    Từ máy
+                  </button>
+                </div>
               </div>
 
-              {imageMode === "url" || mode === "edit" ? (
+              {imageMode === "url" ? (
                 <input
                   type="text"
                   value={imageUrl}

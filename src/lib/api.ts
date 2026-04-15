@@ -1,8 +1,8 @@
-const BASE_URL = "https://happyfurniture-huexcrecemgaesdy.southeastasia-01.azurewebsites.net/api";
+// const BASE_URL = "https://happyfurniture-huexcrecemgaesdy.southeastasia-01.azurewebsites.net/api";
 
 // const BASE_URL = "http://localhost:5238/api"
 
-// const BASE_URL = "https://localhost:7290/api"
+const BASE_URL = "https://localhost:7290/api"
 
 
 function getToken(): string | null {
@@ -371,14 +371,15 @@ export async function deleteProduct(id: number): Promise<void> {
 // Multipart upload helpers (no Content-Type header — browser sets boundary automatically)
 async function requestMultipart<T>(
   path: string,
-  formData: FormData
+  formData: FormData,
+  method: "POST" | "PUT" | "DELETE" = "POST"
 ): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {};
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   const res = await fetch(`${BASE_URL}${path}`, {
-    method: "POST",
+    method,
     headers,
     body: formData,
   });
@@ -638,6 +639,34 @@ export async function createCategoryWithImage(
   formData.append("image", data.image);
 
   return requestMultipart<Category>("/Categories/with-image", formData);
+}
+
+export interface UpdateCategoryWithImageData {
+  name: string;
+  nameEn?: string;
+  description?: string;
+  descriptionEn?: string;
+  parentId?: number | null;
+  sortOrder?: number | null;
+  isActive: boolean;
+  image: File;
+}
+
+export async function updateCategoryWithImage(
+  id: number,
+  data: UpdateCategoryWithImageData
+): Promise<Category> {
+  const formData = new FormData();
+  formData.append("name", data.name);
+  if (data.nameEn) formData.append("nameEn", data.nameEn);
+  if (data.description) formData.append("description", data.description);
+  if (data.descriptionEn) formData.append("descriptionEn", data.descriptionEn);
+  if (data.parentId != null) formData.append("parentId", String(data.parentId));
+  if (data.sortOrder != null) formData.append("sortOrder", String(data.sortOrder));
+  formData.append("isActive", data.isActive ? "true" : "false");
+  formData.append("image", data.image);
+
+  return requestMultipart<Category>(`/Categories/${id}/with-image`, formData, "PUT");
 }
 
 // Materials
