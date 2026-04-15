@@ -706,8 +706,8 @@ export async function deleteMaterial(id: number): Promise<void> {
   return request<void>(`/Materials/${id}`, { method: "DELETE" });
 }
 
-export async function getActiveMaterials(): Promise<Material[]> {
-  return request<Material[]>("/Materials/active");
+export async function getActiveMaterials(): Promise<PaginatedResponse<Material>> {
+  return request<PaginatedResponse<Material>>("/Materials/active");
 }
 
 // ─── Assemblies ───────────────────────────────────────────────────────────────
@@ -763,8 +763,8 @@ export async function deleteAssembly(id: number): Promise<void> {
   return request<void>(`/Assemblies/${id}`, { method: "DELETE" });
 }
 
-export async function getActiveAssemblies(): Promise<Assembly[]> {
-  return request<Assembly[]>("/Assemblies/active");
+export async function getActiveAssemblies(): Promise<PaginatedResponse<Assembly>> {
+  return request<PaginatedResponse<Assembly>>("/Assemblies/active");
 }
 
 // ─── News ────────────────────────────────────────────────────────────────────────
