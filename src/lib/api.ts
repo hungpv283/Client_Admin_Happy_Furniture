@@ -33,8 +33,7 @@ async function request<T>(
   }
 
   if (res.status === 204) return {} as T;
-  const json = await res.json();
-  if (Array.isArray(json)) return { items: json, total: json.length } as T;
+  const json: T = await res.json();
   return json;
 }
 
