@@ -505,6 +505,7 @@ export interface ProductVariant {
   colorName: string;
   colorNameEn: string | null;
   slug: string | null;
+  fullSlug: string | null;
   colorCode: string;
   imageUrl: string | null;
   price: number | null;
