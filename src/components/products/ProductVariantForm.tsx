@@ -51,7 +51,9 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
         if (mode === "edit" && variantId) {
           const variantData = await getProductVariantById(variantId);
           setColorName(variantData.colorName || "");
-          setSlug(variantData.slug || "");
+          const fullSlug = variantData.slug || "";
+          const lastDash = fullSlug.lastIndexOf("-");
+          setSlug(lastDash >= 0 ? fullSlug.substring(lastDash + 1) : fullSlug);
           setColorCode((variantData.colorCode || "FFFFFF").replace("#", "").toUpperCase());
           setImageUrl(variantData.imageUrl || "");
           setImagePreview(variantData.imageUrl || "");
@@ -67,17 +69,15 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
     load();
   }, [mode, productId, variantId, toastError]);
 
-  const generateSlug = (value: string) =>
-    value.toLowerCase()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-      .replace(/đ/g, "d")
-      .replace(/[^a-z0-9\s-]/g, "")
-      .trim().replace(/\s+/g, "-");
-
   const handleColorNameChange = (value: string) => {
     setColorName(value);
-    if (mode === "create") setSlug(generateSlug(value));
   };
+
+  const slugPrefix = (() => {
+    if (!product?.slug) return "";
+    const lastDash = product.slug.lastIndexOf("-");
+    return lastDash >= 0 ? product.slug.substring(0, lastDash + 1) : "";
+  })();
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -131,6 +131,7 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
             productId,
             colorName: colorName.trim(),
             colorCode: colorCode.trim().toUpperCase(),
+            slugCode: slug.trim() || undefined,
             isActive,
             image: imageFile,
           });
@@ -236,15 +237,25 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
               </div>
 
               <div className="mb-5">
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Slug màu</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Mã biến thể (Slug code)</label>
                 <input
                   type="text"
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
-                  placeholder="VD: mau-trang, xanh-navy, ..."
+                  placeholder="VD: 477, 566, ..."
                   className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90"
                 />
-                <p className="mt-1 text-xs text-gray-400">Tự động tạo từ tên màu. Dùng để nối URL khi chọn màu.</p>
+                {slugPrefix && (
+                  <p className="mt-1 text-xs text-gray-400">
+                    Slug đầy đủ:{" "}
+                    <span className="font-mono text-brand-500">
+                      {slugPrefix}{slug.trim() || <span className="text-gray-400">???</span>}
+                    </span>
+                  </p>
+                )}
+                {!slugPrefix && (
+                  <p className="mt-1 text-xs text-gray-400">Nhập mã để thay thế phần cuối slug sản phẩm. VD: sản phẩm có slug <span className="font-mono">021-0001-0-1-566</span>, nhập <span className="font-mono">477</span> → slug biến thể sẽ là <span className="font-mono">021-0001-0-1-477</span>.</p>
+                )}
               </div>
 
               <div className="mb-5">
