@@ -575,6 +575,7 @@ export interface CreateProductVariantWithImageData {
   colorName: string;
   colorNameEn?: string | null;
   colorCode: string;
+  slugCode?: string;
   isActive: boolean;
   image: File;
 }
@@ -587,6 +588,7 @@ export async function createProductVariantWithImage(
   formData.append("colorName", data.colorName);
   if (data.colorNameEn) formData.append("colorNameEn", data.colorNameEn);
   formData.append("colorCode", data.colorCode);
+  if (data.slugCode) formData.append("slugCode", data.slugCode);
   formData.append("isActive", data.isActive ? "true" : "false");
   formData.append("image", data.image);
 
