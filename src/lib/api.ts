@@ -340,6 +340,10 @@ export interface CreateProductData extends Partial<ProductDeliveryFields> {
   categoryIds: number[];
   materialIds: number[];
   imageUrls: string[];
+  defaultVariantColorName?: string;
+  defaultVariantColorNameEn?: string;
+  defaultVariantColorCode?: string;
+  defaultVariantSlug?: string;
 }
 
 export async function createProduct(data: CreateProductData): Promise<Product> {
@@ -437,6 +441,12 @@ export interface CreateProductWithImagesData extends Partial<ProductDeliveryFiel
   categoryIds: number[];
   materialIds: number[];
   images: File[];
+  defaultVariantColorName?: string;
+  defaultVariantColorNameEn?: string;
+  defaultVariantColorCode?: string;
+  defaultVariantSlug?: string;
+  defaultVariantImage?: File;
+  defaultVariantImageUrl?: string;
 }
 
 export async function createProductWithImages(
@@ -466,6 +476,12 @@ export async function createProductWithImages(
   formData.append("categoryIds", data.categoryIds.join(","));
   formData.append("materialIds", data.materialIds.join(","));
   data.images.forEach((file) => formData.append("images", file));
+  if (data.defaultVariantColorName) formData.append("defaultVariantColorName", data.defaultVariantColorName);
+  if (data.defaultVariantColorNameEn) formData.append("defaultVariantColorNameEn", data.defaultVariantColorNameEn);
+  if (data.defaultVariantColorCode) formData.append("defaultVariantColorCode", data.defaultVariantColorCode);
+  if (data.defaultVariantSlug) formData.append("defaultVariantSlug", data.defaultVariantSlug);
+  if (data.defaultVariantImage) formData.append("defaultVariantImage", data.defaultVariantImage);
+  if (data.defaultVariantImageUrl) formData.append("defaultVariantImageUrl", data.defaultVariantImageUrl);
 
   return requestMultipart<Product>("/Products/with-images", formData);
 }
@@ -487,6 +503,7 @@ export interface ProductVariant {
   id: number;
   productId: number;
   colorName: string;
+  colorNameEn: string | null;
   slug: string | null;
   fullSlug: string | null;
   colorCode: string;
@@ -501,6 +518,7 @@ export interface ProductVariant {
 export interface CreateProductVariantData {
   productId: number;
   colorName: string;
+  colorNameEn?: string | null;
   slug?: string | null;
   colorCode: string;
   imageUrl?: string | null;
@@ -509,6 +527,7 @@ export interface CreateProductVariantData {
 
 export interface UpdateProductVariantData {
   colorName: string;
+  colorNameEn?: string | null;
   slug?: string | null;
   colorCode: string;
   imageUrl?: string | null;
@@ -555,8 +574,9 @@ export async function deleteProductVariant(id: number): Promise<void> {
 export interface CreateProductVariantWithImageData {
   productId: number;
   colorName: string;
+  colorNameEn?: string | null;
   colorCode: string;
-  slugCode?: string;
+  slug?: string | null;
   isActive: boolean;
   image: File;
 }
@@ -567,8 +587,9 @@ export async function createProductVariantWithImage(
   const formData = new FormData();
   formData.append("productId", String(data.productId));
   formData.append("colorName", data.colorName);
+  if (data.colorNameEn) formData.append("colorNameEn", data.colorNameEn);
   formData.append("colorCode", data.colorCode);
-  if (data.slugCode) formData.append("slugCode", data.slugCode);
+  if (data.slug) formData.append("slug", data.slug);
   formData.append("isActive", data.isActive ? "true" : "false");
   formData.append("image", data.image);
 

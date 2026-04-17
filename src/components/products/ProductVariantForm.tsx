@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   createProductVariant,
   createProductVariantWithImage,
@@ -23,14 +23,24 @@ type ImageMode = "url" | "file";
 
 export default function ProductVariantForm({ mode, productId, variantId }: Props) {
   const router = useRouter();
+  const params = useParams<{ variantId?: string }>();
   const { success, error: toastError } = useToast();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const routeVariantId = params?.variantId ? Number(params.variantId) : undefined;
+  const resolvedVariantId =
+    typeof variantId === "number" && Number.isFinite(variantId)
+      ? variantId
+      : typeof routeVariantId === "number" && Number.isFinite(routeVariantId)
+        ? routeVariantId
+        : undefined;
 
   const [product, setProduct] = useState<Product | null>(null);
   const [fetching, setFetching] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   const [colorName, setColorName] = useState("");
+  const [colorNameEn, setColorNameEn] = useState("");
   const [slug, setSlug] = useState("");
   const [initialSlugCode, setInitialSlugCode] = useState("");
   const [colorCode, setColorCode] = useState("FFFFFF");
@@ -49,12 +59,15 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
         const productData = await getProductById(productId);
         setProduct(productData);
 
-        if (mode === "edit" && variantId) {
-          const variantData = await getProductVariantById(variantId);
+        if (mode === "edit" && resolvedVariantId) {
+          const variantData = await getProductVariantById(resolvedVariantId);
           setColorName(variantData.colorName || "");
           const rawSlug = variantData.slug || "";
           setSlug(rawSlug);
           setInitialSlugCode(rawSlug);
+
+          setColorNameEn(variantData.colorNameEn || "");
+          setSlug(variantData.slug || "");
           setColorCode((variantData.colorCode || "FFFFFF").replace("#", "").toUpperCase());
           setImageUrl(variantData.imageUrl || "");
           setImagePreview(variantData.imageUrl || "");
@@ -68,17 +81,19 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
     };
 
     load();
-  }, [mode, productId, variantId, toastError]);
+  }, [mode, productId, resolvedVariantId, toastError]);
+
+  const generateSlug = (value: string) =>
+    value.toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/[^a-z0-9\s-]/g, "")
+      .trim().replace(/\s+/g, "-");
 
   const handleColorNameChange = (value: string) => {
     setColorName(value);
+    if (mode === "create") setSlug(generateSlug(value));
   };
-
-  const slugPrefix = (() => {
-    if (!product?.slug) return "";
-    const lastDash = product.slug.lastIndexOf("-");
-    return lastDash >= 0 ? product.slug.substring(0, lastDash + 1) : "";
-  })();
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -126,20 +141,22 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
 
     setSubmitting(true);
     try {
-      if (mode === "create") {
-        if (imageMode === "file" && imageFile) {
-          await createProductVariantWithImage({
-            productId,
-            colorName: colorName.trim(),
-            colorCode: colorCode.trim().toUpperCase(),
-            slugCode: slug.trim() || undefined,
-            isActive,
-            image: imageFile,
-          });
+        if (mode === "create") {
+          if (imageMode === "file" && imageFile) {
+            await createProductVariantWithImage({
+              productId,
+              colorName: colorName.trim(),
+              colorNameEn: colorNameEn.trim() || undefined,
+              slug: slug.trim() || undefined,
+              colorCode: colorCode.trim().toUpperCase(),
+              isActive,
+              image: imageFile,
+            });
         } else {
           await createProductVariant({
             productId,
             colorName: colorName.trim(),
+            colorNameEn: colorNameEn.trim() || undefined,
             slug: slug.trim() || undefined,
             colorCode: colorCode.trim().toUpperCase(),
             imageUrl: imageUrl.trim() || undefined,
@@ -152,6 +169,11 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
         await updateProductVariant(variantId, {
           colorName: colorName.trim(),
           slug: slugChanged ? (slug.trim() || undefined) : undefined,
+      } else if (resolvedVariantId) {
+        await updateProductVariant(resolvedVariantId, {
+          colorName: colorName.trim(),
+          colorNameEn: colorNameEn.trim() || undefined,
+          slug: slug.trim() || undefined,
           colorCode: colorCode.trim().toUpperCase(),
           imageUrl: imageMode === "url" ? imageUrl.trim() || undefined : undefined,
           isActive,
@@ -220,44 +242,47 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
                 Thông tin biến thể
               </h2>
 
-              <div className="mb-5">
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Tên màu <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={colorName}
-                  onChange={(e) => handleColorNameChange(e.target.value)}
-                  placeholder="VD: Xám nhạt, Xanh navy, ..."
-                  className={`w-full rounded-xl border bg-white px-4 py-2.5 text-sm outline-none transition-colors dark:bg-white/5 dark:text-white/90 ${
-                    errors.colorName
-                      ? "border-red-400 dark:border-red-500 focus:border-red-500"
-                      : "border-gray-200 dark:border-gray-700 focus:border-brand-500 dark:focus:border-brand-500"
-                  }`}
-                />
-                {errors.colorName && <p className="mt-1 text-xs text-red-500">{errors.colorName}</p>}
+              <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Tên màu (VI) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={colorName}
+                    onChange={(e) => handleColorNameChange(e.target.value)}
+                    placeholder="VD: Xám nhạt, Xanh navy, ..."
+                    className={`w-full rounded-xl border bg-white px-4 py-2.5 text-sm outline-none transition-colors dark:bg-white/5 dark:text-white/90 ${errors.colorName
+                        ? "border-red-400 dark:border-red-500 focus:border-red-500"
+                        : "border-gray-200 dark:border-gray-700 focus:border-brand-500 dark:focus:border-brand-500"
+                      }`}
+                  />
+                  {errors.colorName && <p className="mt-1 text-xs text-red-500">{errors.colorName}</p>}
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Tên màu (EN)
+                  </label>
+                  <input
+                    type="text"
+                    value={colorNameEn}
+                    onChange={(e) => setColorNameEn(e.target.value)}
+                    placeholder="VD: Light Gray, Navy Blue, ..."
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90"
+                  />
+                </div>
               </div>
 
               <div className="mb-5">
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Mã biến thể (Slug code)</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Slug màu</label>
                 <input
                   type="text"
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
-                  placeholder="VD: 477, 566, ..."
+                  placeholder="VD: mau-trang, xanh-navy, ..."
                   className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90"
                 />
-                {slugPrefix && (
-                  <p className="mt-1 text-xs text-gray-400">
-                    Slug đầy đủ:{" "}
-                    <span className="font-mono text-brand-500">
-                      {slugPrefix}{slug.trim() || <span className="text-gray-400">???</span>}
-                    </span>
-                  </p>
-                )}
-                {!slugPrefix && (
-                  <p className="mt-1 text-xs text-gray-400">Nhập mã để thay thế phần cuối slug sản phẩm. VD: sản phẩm có slug <span className="font-mono">021-0001-0-1-566</span>, nhập <span className="font-mono">477</span> → slug biến thể sẽ là <span className="font-mono">021-0001-0-1-477</span>.</p>
-                )}
+                <p className="mt-1 text-xs text-gray-400">Tự động tạo từ tên màu. Dùng để nối URL khi chọn màu.</p>
               </div>
 
               <div className="mb-5">
@@ -302,22 +327,20 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
                     <button
                       type="button"
                       onClick={() => handleImageModeSwitch("url")}
-                      className={`px-3 py-1.5 font-medium transition-colors ${
-                        imageMode === "url"
+                      className={`px-3 py-1.5 font-medium transition-colors ${imageMode === "url"
                           ? "bg-brand-500 text-white"
                           : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5"
-                      }`}
+                        }`}
                     >
                       URL
                     </button>
                     <button
                       type="button"
                       onClick={() => handleImageModeSwitch("file")}
-                      className={`px-3 py-1.5 font-medium transition-colors ${
-                        imageMode === "file"
+                      className={`px-3 py-1.5 font-medium transition-colors ${imageMode === "file"
                           ? "bg-brand-500 text-white"
                           : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5"
-                      }`}
+                        }`}
                     >
                       Từ máy
                     </button>
@@ -334,11 +357,10 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
                         setImagePreview(e.target.value);
                       }}
                       placeholder="https://example.com/variant.jpg"
-                      className={`w-full rounded-xl border bg-white px-4 py-2.5 text-sm outline-none transition-colors dark:bg-white/5 dark:text-white/90 ${
-                        errors.imageUrl
+                      className={`w-full rounded-xl border bg-white px-4 py-2.5 text-sm outline-none transition-colors dark:bg-white/5 dark:text-white/90 ${errors.imageUrl
                           ? "border-red-400 dark:border-red-500 focus:border-red-500"
                           : "border-gray-200 dark:border-gray-700 focus:border-brand-500 dark:focus:border-brand-500"
-                      }`}
+                        }`}
                     />
                     {errors.imageUrl && <p className="mt-1 text-xs text-red-500">{errors.imageUrl}</p>}
                   </div>
@@ -394,6 +416,9 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
                 )}
                 <div className="text-center">
                   <p className="text-sm font-medium text-gray-800 dark:text-white/90">{colorName || "Tên màu"}</p>
+                  {colorNameEn && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{colorNameEn}</p>
+                  )}
                   <p className="mt-0.5 font-mono text-xs text-gray-400">#{colorCode.toUpperCase() || "FFFFFF"}</p>
                 </div>
               </div>
