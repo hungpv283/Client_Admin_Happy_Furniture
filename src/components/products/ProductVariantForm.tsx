@@ -1,429 +1,642 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  createProductVariant,
-  createProductVariantWithImage,
+  createProduct,
+  createProductImageWithImage,
+  createProductWithImages,
+  getActiveMaterials,
+  getActiveAssemblies,
+  getCategories,
   getProductById,
-  getProductVariantById,
-  updateProductVariant,
+  getRootCategories,
+  updateProduct,
 } from "@/lib/api";
-import type { Product } from "@/lib/api";
+import type { Assembly, Category, Material } from "@/lib/api";
 import { useToast } from "@/components/ui/toast/Toast";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 interface Props {
   mode: "create" | "edit";
-  productId: number;
-  variantId?: number;
+  productId?: number;
 }
 
 type ImageMode = "url" | "file";
 
-export default function ProductVariantForm({ mode, productId, variantId }: Props) {
+type ImageEntry = {
+  mode: ImageMode;
+  url: string;
+  file: File | null;
+  preview: string;
+  imageId?: number;       // ID của ProductImage khi load từ API (edit mode)
+};
+
+const newEntry = (): ImageEntry => ({ mode: "file", url: "", file: null, preview: "" });
+
+export default function ProductForm({ mode, productId }: Props) {
   const router = useRouter();
   const { success, error: toastError } = useToast();
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const [product, setProduct] = useState<Product | null>(null);
-  const [fetching, setFetching] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-
-  const [colorName, setColorName] = useState("");
+  const [name, setName] = useState("");
+  const [nameEn, setNameEn] = useState("");
   const [slug, setSlug] = useState("");
-  const [colorCode, setColorCode] = useState("FFFFFF");
-  const [imageMode, setImageMode] = useState<ImageMode>("url");
-  const [imageUrl, setImageUrl] = useState("");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState("");
+  const [description, setDescription] = useState("");
+  const [descriptionEn, setDescriptionEn] = useState("");
+  const [dimensionsHeight, setDimensionsHeight] = useState("");
+  const [dimensionsWidth, setDimensionsWidth] = useState("");
+  const [dimensionsDepth, setDimensionsDepth] = useState("");
+  const [dimensionUnit, setDimensionUnit] = useState("cm");
+  const [detail, setDetail] = useState("");
+  const [detailEn, setDetailEn] = useState("");
+  const [deliveryInfo, setDeliveryInfo] = useState("");
+  const [deliveryInfoEn, setDeliveryInfoEn] = useState("");
+  const [weight, setWeight] = useState("");
+  const [deliveryHeight, setDeliveryHeight] = useState("");
+  const [deliveryWidth, setDeliveryWidth] = useState("");
+  const [deliveryDepth, setDeliveryDepth] = useState("");
+  const [isFeatured, setIsFeatured] = useState(false);
   const [isActive, setIsActive] = useState(true);
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  // Default variant (chỉ dùng khi tạo mới)
+  const [defaultVariantColorName, setDefaultVariantColorName] = useState("Mặc định");
+  const [defaultVariantColorNameEn, setDefaultVariantColorNameEn] = useState("Default");
+  const [defaultVariantImageMode, setDefaultVariantImageMode] = useState<"url" | "file">("file");
+  const [defaultVariantImageUrl, setDefaultVariantImageUrl] = useState("");
+  const [defaultVariantImageFile, setDefaultVariantImageFile] = useState<File | null>(null);
+  const [defaultVariantImagePreview, setDefaultVariantImagePreview] = useState("");
+  const defaultVariantFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [assemblyId, setAssemblyId] = useState<number | "">("");
+  const [selectedParentCategoryIds, setSelectedParentCategoryIds] = useState<number[]>([]);
+  const [selectedChildCategoryIds, setSelectedChildCategoryIds] = useState<number[]>([]);
+  const [selectedMaterialIds, setSelectedMaterialIds] = useState<number[]>([]);
+  const [images, setImages] = useState<ImageEntry[]>([newEntry()]);
+  const [confirmRemoveImageIndex, setConfirmRemoveImageIndex] = useState<number | null>(null);
+
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [rootCategories, setRootCategories] = useState<Category[]>([]);
+  const [allMaterials, setAllMaterials] = useState<Material[]>([]);
+  const [allAssemblies, setAllAssemblies] = useState<Assembly[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(mode === "edit");
 
   useEffect(() => {
-    const load = async () => {
-      setFetching(true);
-      try {
-        const productData = await getProductById(productId);
-        setProduct(productData);
+    getCategories(1, 100).then((data) => setAllCategories(data.items)).catch(() => { });
+    getRootCategories().then(setRootCategories).catch(() => { });
+    getActiveMaterials().then((data) => setAllMaterials(data)).catch(() => { });
+    getActiveAssemblies().then((data) => setAllAssemblies(data)).catch(() => { });
+  }, []);
 
-        if (mode === "edit" && variantId) {
-          const variantData = await getProductVariantById(variantId);
-          setColorName(variantData.colorName || "");
-          const fullSlug = variantData.slug || "";
-          const lastDash = fullSlug.lastIndexOf("-");
-          setSlug(lastDash >= 0 ? fullSlug.substring(lastDash + 1) : fullSlug);
-          setColorCode((variantData.colorCode || "FFFFFF").replace("#", "").toUpperCase());
-          setImageUrl(variantData.imageUrl || "");
-          setImagePreview(variantData.imageUrl || "");
-          setIsActive(variantData.isActive);
+  useEffect(() => {
+    if (mode !== "edit" || !productId) return;
+    setFetching(true);
+    getProductById(productId)
+      .then((product) => {
+        setName(product.name);
+        setNameEn(product.nameEn || "");
+        setSlug(product.slug);
+        setDescription(product.description || "");
+        setDescriptionEn(product.descriptionEn || "");
+        setDimensionsHeight(product.dimensionsHeight ?? "");
+        setDimensionsWidth(product.dimensionsWidth ?? "");
+        setDimensionsDepth(product.dimensionsDepth ?? "");
+        setDimensionUnit(product.dimensionUnit || "cm");
+        setDetail(product.detail || "");
+        setDetailEn(product.detailEn || "");
+        setDeliveryInfo(product.deliveryInfo || "");
+        setDeliveryInfoEn(product.deliveryInfoEn || "");
+        setWeight(product.weight ?? "");
+        setDeliveryHeight(product.deliveryHeight ?? "");
+        setDeliveryWidth(product.deliveryWidth ?? "");
+        setDeliveryDepth(product.deliveryDepth ?? "");
+        setIsFeatured(product.isFeatured);
+        setIsActive(product.isActive);
+        setAssemblyId(product.assemblyId ?? "");
+        setSelectedParentCategoryIds(product.categories.filter((x) => x.parentId == null).map((x) => x.id));
+        setSelectedChildCategoryIds(product.categories.filter((x) => x.parentId != null).map((x) => x.id));
+        setSelectedMaterialIds(product.materials?.map((x) => x.id) ?? product.materialIds ?? []);
+        const validImages = product.images
+          .filter((img) => img.imageUrl)
+          .sort((a, b) => a.id - b.id);
+        if (validImages.length) {
+          setImages(
+            validImages.map((img) => ({
+              mode: "url" as ImageMode,
+              url: img.imageUrl,
+              file: null,
+              preview: img.imageUrl,
+              imageId: img.id,
+            }))
+          );
+        } else {
+          setImages([newEntry()]);
         }
-      } catch (err: unknown) {
-        toastError(err instanceof Error ? err.message : "Lỗi tải dữ liệu");
-      } finally {
-        setFetching(false);
-      }
-    };
+      })
+      .catch(() => toastError("Không thể tải thông tin sản phẩm"))
+      .finally(() => setFetching(false));
+  }, [mode, productId, toastError]);
 
-    load();
-  }, [mode, productId, variantId, toastError]);
+  const childCategories = allCategories.filter((x) => x.parentId != null);
 
-  const handleColorNameChange = (value: string) => {
-    setColorName(value);
+  // 子分类：根据选中的父分类进行筛选
+  const filteredChildCategories = selectedParentCategoryIds.length > 0
+    ? childCategories.filter((c) => selectedParentCategoryIds.includes(c.parentId!))
+    : childCategories;
+
+  const categoryIds = Array.from(new Set([...selectedParentCategoryIds, ...selectedChildCategoryIds]));
+
+  const generateSlug = (value: string) =>
+    value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/[^a-z0-9\s-]/g, "").trim().replace(/\s+/g, "-");
+
+  const handleNameChange = (value: string) => {
+    setName(value);
+    if (mode === "create") setSlug(generateSlug(value));
   };
 
-  const slugPrefix = (() => {
-    if (!product?.slug) return "";
-    const lastDash = product.slug.lastIndexOf("-");
-    return lastDash >= 0 ? product.slug.substring(0, lastDash + 1) : "";
-  })();
-
-  const validate = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (!colorName.trim()) newErrors.colorName = "Vui lòng nhập tên màu";
-    if (!colorCode.trim()) newErrors.colorCode = "Vui lòng nhập mã màu";
-    else if (!/^[0-9A-Fa-f]{6}$/.test(colorCode.trim())) {
-      newErrors.colorCode = "Mã màu phải gồm 6 ký tự HEX (VD: FF5733)";
-    }
-
-    if (imageMode === "url" && imageUrl.trim() && imageUrl.trim().length > 500) {
-      newErrors.imageUrl = "URL ảnh không được vượt quá 500 ký tự";
-    }
-
-    if (imageMode === "file" && !imageFile) {
-      newErrors.imageFile = "Vui lòng chọn ảnh từ máy";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const handleDefaultVariantColorNameChange = (value: string) => {
+    setDefaultVariantColorName(value);
   };
 
-  const handleImageModeSwitch = (modeValue: ImageMode) => {
-    setImageMode(modeValue);
-    setImageUrl("");
-    setImageFile(null);
-    setImagePreview("");
-    setErrors((prev) => {
-      const next = { ...prev };
-      delete next.imageUrl;
-      delete next.imageFile;
+  const toggle = (id: number, values: number[], setter: React.Dispatch<React.SetStateAction<number[]>>) => {
+    setter(values.includes(id) ? values.filter((x) => x !== id) : [...values, id]);
+  };
+
+  const updateImage = (index: number, patch: Partial<ImageEntry>) => {
+    setImages((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], ...patch };
       return next;
     });
   };
 
-  const handleFileChange = (file: File | null) => {
-    if (!file) return;
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
+  const removeImageAt = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+    setConfirmRemoveImageIndex(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
+    setLoading(true);
+    const hasFiles =
+      images.some((img) => img.mode === "file" && img.file) ||
+      (mode === "create" && defaultVariantImageMode === "file" && defaultVariantImageFile !== null);
 
-    setSubmitting(true);
     try {
-      if (mode === "create") {
-        if (imageMode === "file" && imageFile) {
-          await createProductVariantWithImage({
-            productId,
-            colorName: colorName.trim(),
-            colorCode: colorCode.trim().toUpperCase(),
-            slugCode: slug.trim() || undefined,
-            isActive,
-            image: imageFile,
-          });
-        } else {
-          await createProductVariant({
-            productId,
-            colorName: colorName.trim(),
-            slug: slug.trim() || undefined,
-            colorCode: colorCode.trim().toUpperCase(),
-            imageUrl: imageUrl.trim() || undefined,
-            isActive,
-          });
-        }
-        success("Thêm biến thể thành công");
-      } else if (variantId) {
-        await updateProductVariant(variantId, {
-          colorName: colorName.trim(),
-          slug: slug.trim() || undefined,
-          colorCode: colorCode.trim().toUpperCase(),
-          imageUrl: imageMode === "url" ? imageUrl.trim() || undefined : undefined,
+      const resolvedAssemblyId = assemblyId === "" ? null : Number(assemblyId);
+      if (mode === "create" && hasFiles) {
+        await createProductWithImages({
+          name,
+          nameEn: nameEn || undefined,
+          slug,
+          description,
+          descriptionEn: descriptionEn || undefined,
+          dimensionsHeight: dimensionsHeight || null,
+          dimensionsWidth: dimensionsWidth || null,
+          dimensionsDepth: dimensionsDepth || null,
+          dimensionUnit,
+          detail,
+          detailEn: detailEn || undefined,
+          deliveryInfo,
+          deliveryInfoEn: deliveryInfoEn || undefined,
+          weight: weight || null,
+          deliveryHeight: deliveryHeight || null,
+          deliveryWidth: deliveryWidth || null,
+          deliveryDepth: deliveryDepth || null,
+          isFeatured,
           isActive,
+          assemblyId: resolvedAssemblyId,
+          categoryIds,
+          materialIds: selectedMaterialIds,
+          images: images.filter((img) => img.mode === "file" && img.file).map((img) => img.file!),
+          defaultVariantColorName: defaultVariantColorName || "Mặc định",
+          defaultVariantColorNameEn: defaultVariantColorNameEn || "Default",
+          defaultVariantImage: defaultVariantImageMode === "file" && defaultVariantImageFile ? defaultVariantImageFile : undefined,
+          defaultVariantImageUrl: defaultVariantImageMode === "url" && defaultVariantImageUrl.trim() ? defaultVariantImageUrl.trim() : undefined,
         });
-        success("Cập nhật biến thể thành công");
-      }
+      } else {
+        const payload = {
+          name,
+          nameEn: nameEn || undefined,
+          slug,
+          description,
+          descriptionEn: descriptionEn || undefined,
+          dimensionsHeight: dimensionsHeight || null,
+          dimensionsWidth: dimensionsWidth || null,
+          dimensionsDepth: dimensionsDepth || null,
+          dimensionUnit,
+          detail,
+          detailEn: detailEn || undefined,
+          deliveryInfo,
+          deliveryInfoEn: deliveryInfoEn || undefined,
+          weight: weight || null,
+          deliveryHeight: deliveryHeight || null,
+          deliveryWidth: deliveryWidth || null,
+          deliveryDepth: deliveryDepth || null,
+          isFeatured,
+          isActive,
+          assemblyId: resolvedAssemblyId,
+          categoryIds,
+          materialIds: selectedMaterialIds,
+          imageUrls: images.filter((img) => img.mode === "url" && img.url.trim()).map((img) => img.url.trim()),
+          ...(mode === "create" && {
+            defaultVariantColorName: defaultVariantColorName || "Mặc định",
+            defaultVariantColorNameEn: defaultVariantColorNameEn || "Default",
+            defaultVariantImageUrl: defaultVariantImageMode === "url" && defaultVariantImageUrl.trim() ? defaultVariantImageUrl.trim() : undefined,
+          }),
+        };
+        if (mode === "create") {
+          await createProduct(payload);
+        } else {
+          // ── Edit mode ──
+          // Thu thập URL ảnh hiện tại (cả URL cũ lẫn mới)
+          const urlImages = images
+            .filter((img) => img.mode === "url" && img.url.trim())
+            .map((img) => img.url.trim());
 
-      router.push(`/products/${productId}/variants`);
+          const fileImages = images.filter((img) => img.mode === "file" && img.file);
+
+          // Gửi imageUrls cho BE xử lý (xóa hết rồi tạo lại 1 lần)
+          await updateProduct(productId!, {
+            ...payload,
+            imageUrls: urlImages,
+          });
+
+          // Upload file ảnh mới (nếu có) - chỉ gọi API cho file upload
+          for (let i = 0; i < fileImages.length; i++) {
+            const entry = fileImages[i];
+            await createProductImageWithImage({
+              productId: productId!,
+              image: entry.file!,
+              isPrimary: urlImages.length === 0 && i === 0,
+              sortOrder: urlImages.length + i + 1,
+              altText: null,
+            });
+          }
+        }
+      }
+      success(mode === "create" ? "Tạo sản phẩm thành công!" : "Cập nhật sản phẩm thành công!");
+      router.push("/products");
     } catch (err: unknown) {
-      toastError(err instanceof Error ? err.message : "Có lỗi xảy ra");
+      toastError(err instanceof Error ? err.message : "Đã có lỗi xảy ra");
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
   if (fetching) {
-    return (
-      <div className="flex min-h-[300px] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-500 border-t-transparent" />
-      </div>
-    );
+    return <div className="flex min-h-40 items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-500 border-t-transparent" /></div>;
   }
 
   return (
     <div>
-      <nav className="mb-6 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-        <Link href="/products" className="transition-colors hover:text-brand-500">
-          Sản phẩm
+      <ConfirmDialog
+        open={confirmRemoveImageIndex !== null}
+        title="Xoá ảnh sản phẩm"
+        message={
+          confirmRemoveImageIndex !== null
+            ? `Xoá ảnh #${confirmRemoveImageIndex + 1} khỏi danh sách? Hành động này chỉ áp dụng sau khi bạn lưu sản phẩm.`
+            : ""
+        }
+        confirmLabel="Xoá"
+        onConfirm={() => confirmRemoveImageIndex !== null && removeImageAt(confirmRemoveImageIndex)}
+        onCancel={() => setConfirmRemoveImageIndex(null)}
+      />
+      <div className="mb-6 flex items-center gap-3">
+        <Link href="/products" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          Quay lại
         </Link>
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-        <Link href={`/products/${productId}/variants`} className="max-w-[180px] truncate transition-colors hover:text-brand-500">
-          {product ? product.name : `#${productId}`}
-        </Link>
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-        <Link href={`/products/${productId}/variants`} className="transition-colors hover:text-brand-500">
-          Biến thể
-        </Link>
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-        <span className="font-medium text-gray-800 dark:text-white/80">
-          {mode === "create" ? "Thêm mới" : "Chỉnh sửa"}
-        </span>
-      </nav>
-
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90">
-          {mode === "create" ? "Thêm biến thể" : "Chỉnh sửa biến thể"}
-        </h1>
-        {product && (
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Sản phẩm: <span className="font-medium text-gray-700 dark:text-gray-300">{product.name}</span>
-          </p>
-        )}
+        <span className="text-gray-300 dark:text-gray-700">/</span>
+        <h1 className="text-xl font-bold text-gray-800 dark:text-white/90">{mode === "create" ? "Thêm sản phẩm mới" : "Chỉnh sửa sản phẩm"}</h1>
       </div>
 
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
             <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-              <h2 className="mb-5 text-base font-semibold text-gray-800 dark:text-white/90">
-                Thông tin biến thể
-              </h2>
-
-              <div className="mb-5">
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Tên màu <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={colorName}
-                  onChange={(e) => handleColorNameChange(e.target.value)}
-                  placeholder="VD: Xám nhạt, Xanh navy, ..."
-                  className={`w-full rounded-xl border bg-white px-4 py-2.5 text-sm outline-none transition-colors dark:bg-white/5 dark:text-white/90 ${
-                    errors.colorName
-                      ? "border-red-400 dark:border-red-500 focus:border-red-500"
-                      : "border-gray-200 dark:border-gray-700 focus:border-brand-500 dark:focus:border-brand-500"
-                  }`}
-                />
-                {errors.colorName && <p className="mt-1 text-xs text-red-500">{errors.colorName}</p>}
-              </div>
-
-              <div className="mb-5">
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Mã biến thể (Slug code)</label>
-                <input
-                  type="text"
-                  value={slug}
-                  onChange={(e) => setSlug(e.target.value)}
-                  placeholder="VD: 477, 566, ..."
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90"
-                />
-                {slugPrefix && (
-                  <p className="mt-1 text-xs text-gray-400">
-                    Slug đầy đủ:{" "}
-                    <span className="font-mono text-brand-500">
-                      {slugPrefix}{slug.trim() || <span className="text-gray-400">???</span>}
-                    </span>
-                  </p>
-                )}
-                {!slugPrefix && (
-                  <p className="mt-1 text-xs text-gray-400">Nhập mã để thay thế phần cuối slug sản phẩm. VD: sản phẩm có slug <span className="font-mono">021-0001-0-1-566</span>, nhập <span className="font-mono">477</span> → slug biến thể sẽ là <span className="font-mono">021-0001-0-1-477</span>.</p>
-                )}
-              </div>
-
-              <div className="mb-5">
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Mã màu HEX <span className="text-red-500">*</span>
-                </label>
-                <div className="flex items-center gap-3">
-                  <div className="flex flex-1 items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 transition-colors focus-within:border-brand-500 dark:border-gray-700 dark:bg-white/5 dark:focus-within:border-brand-500">
-                    <span className="select-none text-sm text-gray-500 dark:text-gray-400">#</span>
-                    <input
-                      type="text"
-                      value={colorCode}
-                      onChange={(e) => setColorCode(e.target.value.replace(/[^0-9A-Fa-f]/g, "").slice(0, 6).toUpperCase())}
-                      placeholder="FFFFFF"
-                      maxLength={6}
-                      className={`flex-1 bg-transparent text-sm uppercase tracking-widest outline-none dark:text-white/90 ${errors.colorCode ? "placeholder:text-red-300" : ""}`}
-                    />
+              <h2 className="mb-5 font-semibold text-gray-800 dark:text-white/90">Thông tin cơ bản</h2>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Tên sản phẩm (VI) <span className="text-error-500">*</span></label>
+                    <input type="text" value={name} onChange={(e) => handleNameChange(e.target.value)} required placeholder="Nhập tên sản phẩm" className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
                   </div>
-                  <div className="relative flex-shrink-0">
-                    <input
-                      type="color"
-                      value={`#${colorCode.length === 6 ? colorCode : "FFFFFF"}`}
-                      onChange={(e) => setColorCode(e.target.value.slice(1).toUpperCase())}
-                      className="sr-only"
-                      id="colorPicker"
-                    />
-                    <label
-                      htmlFor="colorPicker"
-                      className="block h-11 w-11 cursor-pointer rounded-xl border-2 border-gray-200 shadow-sm transition-transform hover:scale-105 dark:border-gray-700"
-                      style={{ backgroundColor: `#${colorCode.length === 6 ? colorCode : "FFFFFF"}` }}
-                    />
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Tên sản phẩm (EN)</label>
+                    <input type="text" value={nameEn} onChange={(e) => setNameEn(e.target.value)} placeholder="Product name in English" className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
                   </div>
                 </div>
-                {errors.colorCode && <p className="mt-1 text-xs text-red-500">{errors.colorCode}</p>}
-                <p className="mt-1.5 text-xs text-gray-400">Nhập 6 ký tự HEX hoặc chọn màu bên phải</p>
-              </div>
-
-              <div>
-                <div className="mb-2 flex items-center justify-between">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Ảnh biến thể</label>
-                  <div className="flex overflow-hidden rounded-lg border border-gray-200 text-xs dark:border-gray-700">
-                    <button
-                      type="button"
-                      onClick={() => handleImageModeSwitch("url")}
-                      className={`px-3 py-1.5 font-medium transition-colors ${
-                        imageMode === "url"
-                          ? "bg-brand-500 text-white"
-                          : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5"
-                      }`}
-                    >
-                      URL
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleImageModeSwitch("file")}
-                      className={`px-3 py-1.5 font-medium transition-colors ${
-                        imageMode === "file"
-                          ? "bg-brand-500 text-white"
-                          : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5"
-                      }`}
-                    >
-                      Từ máy
-                    </button>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Slug <span className="text-error-500">*</span></label>
+                  <input type="text" value={slug} onChange={(e) => setSlug(e.target.value)} required placeholder="ten-san-pham" className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Mô tả ngắn (VI)</label>
+                    <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="Mô tả ngắn về sản phẩm" className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Mô tả ngắn (EN)</label>
+                    <textarea value={descriptionEn} onChange={(e) => setDescriptionEn(e.target.value)} rows={3} placeholder="Short description in English" className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
                   </div>
                 </div>
-
-                {imageMode === "url" ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <input
-                      type="text"
-                      value={imageUrl}
-                      onChange={(e) => {
-                        setImageUrl(e.target.value);
-                        setImagePreview(e.target.value);
-                      }}
-                      placeholder="https://example.com/variant.jpg"
-                      className={`w-full rounded-xl border bg-white px-4 py-2.5 text-sm outline-none transition-colors dark:bg-white/5 dark:text-white/90 ${
-                        errors.imageUrl
-                          ? "border-red-400 dark:border-red-500 focus:border-red-500"
-                          : "border-gray-200 dark:border-gray-700 focus:border-brand-500 dark:focus:border-brand-500"
-                      }`}
-                    />
-                    {errors.imageUrl && <p className="mt-1 text-xs text-red-500">{errors.imageUrl}</p>}
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Mô tả chi tiết (VI)</label>
+                    <textarea value={detail} onChange={(e) => setDetail(e.target.value)} rows={5} placeholder="Mô tả chi tiết về sản phẩm" className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
                   </div>
-                ) : (
                   <div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      ref={fileInputRef}
-                      onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 py-8 text-sm text-gray-500 transition-colors hover:border-brand-400 hover:text-brand-500 dark:border-gray-600 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:text-brand-400"
-                    >
-                      <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                      </svg>
-                      {imageFile ? <span className="font-medium text-brand-500">{imageFile.name}</span> : <span>Nhấn để chọn ảnh từ máy</span>}
-                    </button>
-                    {mode === "edit" && (
-                      <p className="mt-1 text-xs text-amber-500">
-                        Chế độ sửa hiện đang cập nhật bằng `imageUrl`. Upload file chỉ dùng cho tạo mới.
-                      </p>
-                    )}
-                    {errors.imageFile && <p className="mt-1 text-xs text-red-500">{errors.imageFile}</p>}
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Mô tả chi tiết (EN)</label>
+                    <textarea value={detailEn} onChange={(e) => setDetailEn(e.target.value)} rows={5} placeholder="Detailed description in English" className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
                   </div>
-                )}
+                </div>
               </div>
             </div>
+
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+              <h2 className="mb-5 font-semibold text-gray-800 dark:text-white/90">Kích thước & Trọng lượng</h2>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                {[
+                  { label: "Chiều dài", value: dimensionsDepth, set: setDimensionsDepth },
+                  { label: "Chiều rộng", value: dimensionsWidth, set: setDimensionsWidth },
+                  { label: "Chiều cao", value: dimensionsHeight, set: setDimensionsHeight },
+                ].map(({ label, value, set }) => (
+                  <div key={label}>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">{label}</label>
+                    <input type="text" value={value} onChange={(e) => set(e.target.value)} placeholder="0" className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+                  </div>
+                ))}
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Đơn vị</label>
+                  <select value={dimensionUnit} onChange={(e) => setDimensionUnit(e.target.value)} className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+                    <option value="cm">cm</option><option value="m">m</option><option value="mm">mm</option><option value="inch">inch</option>
+                  </select>
+                </div>
+              </div>
+              <div className="mt-4">
+                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Trọng lượng (kg)</label>
+                <input type="text" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="0" className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+              <h2 className="mb-1 font-semibold text-gray-800 dark:text-white/90">Hình ảnh</h2>
+              <p className="mb-5 text-xs text-gray-500 dark:text-gray-400">{mode === "create" ? <>Mỗi ảnh có thể nhập URL <em>hoặc</em> chọn file từ máy. Nếu có ít nhất 1 file từ máy, hệ thống sẽ upload qua API multipart.</> : "Chỉnh sửa URL ảnh hiện tại."}</p>
+              <div className="space-y-4">
+                {images.map((entry, index) => (
+                  <div key={index} className="space-y-3 rounded-xl border border-gray-200 p-4 dark:border-gray-700">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Ảnh #{index + 1}</span>
+                      <div className="flex items-center gap-3">
+                        {(
+                          <div className="flex overflow-hidden rounded-lg border border-gray-200 text-xs dark:border-gray-700">
+                            <button type="button" onClick={() => updateImage(index, { mode: "url", url: "", file: null, preview: "" })} className={`px-3 py-1.5 font-medium transition-colors ${entry.mode === "url" ? "bg-brand-500 text-white" : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5"}`}>URL</button>
+                            <button type="button" onClick={() => updateImage(index, { mode: "file", url: "", file: null, preview: "" })} className={`px-3 py-1.5 font-medium transition-colors ${entry.mode === "file" ? "bg-brand-500 text-white" : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5"}`}>Từ máy</button>
+                          </div>
+                        )}
+                        {images.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => setConfirmRemoveImageIndex(index)}
+                            className="rounded-lg p-1.5 text-error-500 transition-colors hover:bg-error-50 dark:hover:bg-error-500/15"
+                            title="Xoá ảnh này"
+                          >
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {entry.mode === "url" ? (
+                      <input type="text" value={entry.url} onChange={(e) => updateImage(index, { url: e.target.value, preview: e.target.value })} placeholder="https://example.com/image.jpg" className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+                    ) : (
+                      <div>
+                        <input type="file" accept="image/*" className="hidden" ref={(el) => { fileInputRefs.current[index] = el; }} onChange={(e) => { const file = e.target.files?.[0] ?? null; if (!file) return; updateImage(index, { file, preview: URL.createObjectURL(file) }); }} />
+                        <button type="button" onClick={() => fileInputRefs.current[index]?.click()} className="flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 py-6 text-sm text-gray-500 transition-colors hover:border-brand-400 hover:text-brand-500 dark:border-gray-600 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:text-brand-400"><svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>{entry.file ? <span className="font-medium text-brand-500">{entry.file.name}</span> : <span>Nhấn để chọn ảnh từ máy</span>}</button>
+                      </div>
+                    )}
+                    {entry.preview && <div className="flex items-center gap-3"><img src={entry.preview} alt="" className="h-16 w-16 rounded-lg border border-gray-200 object-cover dark:border-gray-700" /><span className="max-w-xs truncate text-xs text-gray-400">{entry.preview}</span></div>}
+                  </div>
+                ))}
+                <button type="button" onClick={() => setImages((prev) => [...prev, newEntry()])} className="inline-flex items-center gap-2 text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400"><svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>Thêm ảnh</button>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+              <h2 className="mb-5 font-semibold text-gray-800 dark:text-white/90">Thông tin giao hàng</h2>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Thông tin giao hàng (VI)</label>
+                    <textarea value={deliveryInfo} onChange={(e) => setDeliveryInfo(e.target.value)} rows={3} placeholder="Thông tin giao hàng, thời gian, chính sách..." className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Thông tin giao hàng (EN)</label>
+                    <textarea value={deliveryInfoEn} onChange={(e) => setDeliveryInfoEn(e.target.value)} rows={3} placeholder="Delivery information in English..." className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  {[
+                    { label: "Cao khi giao", value: deliveryHeight, set: setDeliveryHeight },
+                    { label: "Rộng khi giao", value: deliveryWidth, set: setDeliveryWidth },
+                    { label: "Sâu khi giao", value: deliveryDepth, set: setDeliveryDepth },
+                  ].map(({ label, value, set }) => (
+                    <div key={label}>
+                      <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">{label}</label>
+                      <input type="text" value={value} onChange={(e) => set(e.target.value)} placeholder="0" className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90 dark:placeholder-gray-500" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {mode === "create" && (
+              <div className="rounded-2xl border border-brand-200 bg-brand-50 p-6 dark:border-brand-800 dark:bg-brand-900/10">
+                <h2 className="mb-1 font-semibold text-gray-800 dark:text-white/90">Màu sắc mặc định</h2>
+                <p className="mb-5 text-xs text-gray-500 dark:text-gray-400">
+                  Hệ thống tự động tạo một biến thể màu mặc định khi lưu sản phẩm. Bạn có thể đổi tên và màu sắc dưới đây.
+                </p>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                      Tên màu (Tiếng Việt)
+                    </label>
+                    <input
+                      type="text"
+                      value={defaultVariantColorName}
+                      onChange={(e) => handleDefaultVariantColorNameChange(e.target.value)}
+                      placeholder="Mặc định"
+                      className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                      Tên màu (English)
+                    </label>
+                    <input
+                      type="text"
+                      value={defaultVariantColorNameEn}
+                      onChange={(e) => setDefaultVariantColorNameEn(e.target.value)}
+                      placeholder="Default"
+                      className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90"
+                    />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                      Ảnh biến thể mặc định
+                    </label>
+                    <div className="flex overflow-hidden rounded-lg border border-gray-200 text-xs dark:border-gray-700">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDefaultVariantImageMode("url");
+                          setDefaultVariantImageFile(null);
+                          setDefaultVariantImagePreview(defaultVariantImageUrl);
+                        }}
+                        className={`px-3 py-1.5 font-medium transition-colors ${defaultVariantImageMode === "url" ? "bg-brand-500 text-white" : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5"}`}
+                      >
+                        URL
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDefaultVariantImageMode("file");
+                          setDefaultVariantImageUrl("");
+                          setDefaultVariantImagePreview("");
+                        }}
+                        className={`px-3 py-1.5 font-medium transition-colors ${defaultVariantImageMode === "file" ? "bg-brand-500 text-white" : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5"}`}
+                      >
+                        Từ máy
+                      </button>
+                    </div>
+                  </div>
+                  {defaultVariantImageMode === "url" ? (
+                    <input
+                      type="text"
+                      value={defaultVariantImageUrl}
+                      onChange={(e) => {
+                        setDefaultVariantImageUrl(e.target.value);
+                        setDefaultVariantImagePreview(e.target.value);
+                      }}
+                      placeholder="https://example.com/image.jpg"
+                      className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90"
+                    />
+                  ) : (
+                    <div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        ref={defaultVariantFileInputRef}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] ?? null;
+                          if (!file) return;
+                          setDefaultVariantImageFile(file);
+                          setDefaultVariantImagePreview(URL.createObjectURL(file));
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => defaultVariantFileInputRef.current?.click()}
+                        className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 py-5 text-sm text-gray-500 transition-colors hover:border-brand-400 hover:text-brand-500 dark:border-gray-600 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:text-brand-400"
+                      >
+                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                        {defaultVariantImageFile ? (
+                          <span className="font-medium text-brand-500">{defaultVariantImageFile.name}</span>
+                        ) : (
+                          <span>Nhấn để chọn ảnh từ máy</span>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                  {defaultVariantImagePreview && (
+                    <div className="mt-2 flex items-center gap-3">
+                      <img src={defaultVariantImagePreview} alt="" className="h-16 w-16 rounded-lg border border-gray-200 object-cover dark:border-gray-700" />
+                      <span className="max-w-xs truncate text-xs text-gray-400">{defaultVariantImagePreview}</span>
+                    </div>
+                  )}
+                  <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">Để trống để dùng ảnh đầu tiên của sản phẩm</p>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-6">
             <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-              <h2 className="mb-4 text-base font-semibold text-gray-800 dark:text-white/90">Xem trước</h2>
-              <div className="flex flex-col items-center gap-3 py-4">
-                {imagePreview ? (
-                  <img
-                    src={imagePreview}
-                    alt="preview"
-                    className="h-24 w-24 rounded-2xl border border-gray-200 object-cover shadow-md dark:border-gray-700"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = "none";
-                    }}
-                  />
-                ) : (
-                  <div
-                    className="h-20 w-20 rounded-2xl border-2 border-gray-200 shadow-md transition-all dark:border-gray-700"
-                    style={{ backgroundColor: `#${colorCode.length === 6 ? colorCode : "FFFFFF"}` }}
-                  />
-                )}
-                <div className="text-center">
-                  <p className="text-sm font-medium text-gray-800 dark:text-white/90">{colorName || "Tên màu"}</p>
-                  <p className="mt-0.5 font-mono text-xs text-gray-400">#{colorCode.toUpperCase() || "FFFFFF"}</p>
-                </div>
+              <h2 className="mb-5 font-semibold text-gray-800 dark:text-white/90">Trạng thái</h2>
+              <div className="space-y-4">
+                {[
+                  { label: "Hoạt động", value: isActive, set: setIsActive },
+                  { label: "Sản phẩm nổi bật", value: isFeatured, set: setIsFeatured },
+                ].map(({ label, value, set }) => (
+                  <label key={label} className="flex cursor-pointer items-center justify-between">
+                    <span className="text-sm text-gray-700 dark:text-gray-400">{label}</span>
+                    <div className="relative"><input type="checkbox" className="sr-only" checked={value} onChange={(e) => set(e.target.checked)} /><div className={`h-6 w-11 rounded-full transition-colors ${value ? "bg-brand-500" : "bg-gray-300 dark:bg-gray-600"}`} /><div className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${value ? "translate-x-5" : "translate-x-0"}`} /></div>
+                  </label>
+                ))}
               </div>
             </div>
 
             <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-              <h2 className="mb-4 text-base font-semibold text-gray-800 dark:text-white/90">Trạng thái</h2>
-              <label className="flex cursor-pointer select-none items-center gap-3">
-                <div className="relative">
-                  <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="sr-only" />
-                  <div className={`h-6 w-11 rounded-full transition-colors ${isActive ? "bg-brand-500" : "bg-gray-200 dark:bg-gray-700"}`} />
-                  <div className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform ${isActive ? "translate-x-6" : "translate-x-1"}`} />
-                </div>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{isActive ? "Hoạt động" : "Ẩn"}</span>
-              </label>
+              <h2 className="mb-5 font-semibold text-gray-800 dark:text-white/90">Lắp ráp (Assembly)</h2>
+              <select
+                value={assemblyId}
+                onChange={(e) => setAssemblyId(e.target.value === "" ? "" : Number(e.target.value))}
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+              >
+                <option value="">Không có</option>
+                {allAssemblies.map((a) => (
+                  <option key={a.id} value={a.id}>{a.nameVi}</option>
+                ))}
+              </select>
             </div>
 
-            <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {submitting && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />}
-                {mode === "create" ? "Thêm biến thể" : "Lưu thay đổi"}
-              </button>
-              <Link
-                href={`/products/${productId}/variants`}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
-              >
-                Hủy
-              </Link>
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+              <h2 className="mb-5 font-semibold text-gray-800 dark:text-white/90">Danh mục cha</h2>
+              <div className="max-h-64 space-y-1 overflow-y-auto">
+                {rootCategories.map((category) => (
+                  <label key={category.id} className="flex cursor-pointer items-center gap-3 rounded-lg p-2 transition-colors hover:bg-gray-50 dark:hover:bg-white/5">
+                    <input type="checkbox" checked={selectedParentCategoryIds.includes(category.id)} onChange={() => toggle(category.id, selectedParentCategoryIds, setSelectedParentCategoryIds)} className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500" />
+                    <span className="text-sm text-gray-700 dark:text-gray-400">{category.name.trim()}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+              <h2 className="mb-5 font-semibold text-gray-800 dark:text-white/90">Danh mục con</h2>
+              <div className="max-h-64 space-y-1 overflow-y-auto">
+                {filteredChildCategories.length === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Chọn danh mục cha để hiển thị danh mục con</p>
+                ) : filteredChildCategories.map((category) => (
+                  <label key={category.id} className="flex cursor-pointer items-center gap-3 rounded-lg p-2 transition-colors hover:bg-gray-50 dark:hover:bg-white/5">
+                    <input type="checkbox" checked={selectedChildCategoryIds.includes(category.id)} onChange={() => toggle(category.id, selectedChildCategoryIds, setSelectedChildCategoryIds)} className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500" />
+                    <span className="text-sm text-gray-700 dark:text-gray-400">{category.name.trim()}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+              <h2 className="mb-5 font-semibold text-gray-800 dark:text-white/90">Chất liệu</h2>
+              <div className="max-h-64 space-y-1 overflow-y-auto">
+                {allMaterials.length === 0 ? <p className="text-sm text-gray-500 dark:text-gray-400">Chưa có chất liệu đang hoạt động</p> : allMaterials.map((material) => (
+                  <label key={material.id} className="flex cursor-pointer items-start gap-3 rounded-lg p-2 transition-colors hover:bg-gray-50 dark:hover:bg-white/5">
+                    <input type="checkbox" checked={selectedMaterialIds.includes(material.id)} onChange={() => toggle(material.id, selectedMaterialIds, setSelectedMaterialIds)} className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500" />
+                    <div className="min-w-0"><span className="block text-sm text-gray-700 dark:text-gray-400">{material.nameVi}</span>{material.descriptionVi && <span className="block truncate text-xs text-gray-500 dark:text-gray-500">{material.descriptionVi}</span>}</div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <button type="submit" disabled={loading} className="w-full rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-600 disabled:opacity-60">{loading ? "Đang lưu..." : mode === "create" ? "Tạo sản phẩm" : "Lưu thay đổi"}</button>
+              <Link href="/products" className="w-full rounded-lg border border-gray-300 px-5 py-2.5 text-center text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">Hủy</Link>
             </div>
           </div>
         </div>

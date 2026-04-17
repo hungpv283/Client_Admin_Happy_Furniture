@@ -59,6 +59,15 @@ export default function ProductForm({ mode, productId }: Props) {
   const [deliveryDepth, setDeliveryDepth] = useState("");
   const [isFeatured, setIsFeatured] = useState(false);
   const [isActive, setIsActive] = useState(true);
+
+  // Default variant (chỉ dùng khi tạo mới)
+  const [defaultVariantColorName, setDefaultVariantColorName] = useState("Mặc định");
+  const [defaultVariantColorNameEn, setDefaultVariantColorNameEn] = useState("Default");
+  const [defaultVariantImageMode, setDefaultVariantImageMode] = useState<"url" | "file">("file");
+  const [defaultVariantImageUrl, setDefaultVariantImageUrl] = useState("");
+  const [defaultVariantImageFile, setDefaultVariantImageFile] = useState<File | null>(null);
+  const [defaultVariantImagePreview, setDefaultVariantImagePreview] = useState("");
+  const defaultVariantFileInputRef = useRef<HTMLInputElement | null>(null);
   const [assemblyId, setAssemblyId] = useState<number | "">("");
   const [selectedParentCategoryIds, setSelectedParentCategoryIds] = useState<number[]>([]);
   const [selectedChildCategoryIds, setSelectedChildCategoryIds] = useState<number[]>([]);
@@ -146,6 +155,10 @@ export default function ProductForm({ mode, productId }: Props) {
     if (mode === "create") setSlug(generateSlug(value));
   };
 
+  const handleDefaultVariantColorNameChange = (value: string) => {
+    setDefaultVariantColorName(value);
+  };
+
   const toggle = (id: number, values: number[], setter: React.Dispatch<React.SetStateAction<number[]>>) => {
     setter(values.includes(id) ? values.filter((x) => x !== id) : [...values, id]);
   };
@@ -166,7 +179,9 @@ export default function ProductForm({ mode, productId }: Props) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const hasFiles = images.some((img) => img.mode === "file" && img.file);
+    const hasFiles =
+      images.some((img) => img.mode === "file" && img.file) ||
+      (mode === "create" && defaultVariantImageMode === "file" && defaultVariantImageFile !== null);
 
     try {
       const resolvedAssemblyId = assemblyId === "" ? null : Number(assemblyId);
@@ -195,6 +210,10 @@ export default function ProductForm({ mode, productId }: Props) {
           categoryIds,
           materialIds: selectedMaterialIds,
           images: images.filter((img) => img.mode === "file" && img.file).map((img) => img.file!),
+          defaultVariantColorName: defaultVariantColorName || "Mặc định",
+          defaultVariantColorNameEn: defaultVariantColorNameEn || "Default",
+          defaultVariantImage: defaultVariantImageMode === "file" && defaultVariantImageFile ? defaultVariantImageFile : undefined,
+          defaultVariantImageUrl: defaultVariantImageMode === "url" && defaultVariantImageUrl.trim() ? defaultVariantImageUrl.trim() : undefined,
         });
       } else {
         const payload = {
@@ -221,6 +240,11 @@ export default function ProductForm({ mode, productId }: Props) {
           categoryIds,
           materialIds: selectedMaterialIds,
           imageUrls: images.filter((img) => img.mode === "url" && img.url.trim()).map((img) => img.url.trim()),
+          ...(mode === "create" && {
+            defaultVariantColorName: defaultVariantColorName || "Mặc định",
+            defaultVariantColorNameEn: defaultVariantColorNameEn || "Default",
+            defaultVariantImageUrl: defaultVariantImageMode === "url" && defaultVariantImageUrl.trim() ? defaultVariantImageUrl.trim() : undefined,
+          }),
         };
         if (mode === "create") {
           await createProduct(payload);
@@ -428,6 +452,118 @@ export default function ProductForm({ mode, productId }: Props) {
                 </div>
               </div>
             </div>
+
+            {mode === "create" && (
+              <div className="rounded-2xl border border-brand-200 bg-brand-50 p-6 dark:border-brand-800 dark:bg-brand-900/10">
+                <h2 className="mb-1 font-semibold text-gray-800 dark:text-white/90">Màu sắc mặc định</h2>
+                <p className="mb-5 text-xs text-gray-500 dark:text-gray-400">
+                  Hệ thống tự động tạo một biến thể màu mặc định khi lưu sản phẩm. Bạn có thể đổi tên và màu sắc dưới đây.
+                </p>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                      Tên màu (Tiếng Việt)
+                    </label>
+                    <input
+                      type="text"
+                      value={defaultVariantColorName}
+                      onChange={(e) => handleDefaultVariantColorNameChange(e.target.value)}
+                      placeholder="Mặc định"
+                      className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                      Tên màu (English)
+                    </label>
+                    <input
+                      type="text"
+                      value={defaultVariantColorNameEn}
+                      onChange={(e) => setDefaultVariantColorNameEn(e.target.value)}
+                      placeholder="Default"
+                      className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90"
+                    />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                      Ảnh biến thể mặc định
+                    </label>
+                    <div className="flex overflow-hidden rounded-lg border border-gray-200 text-xs dark:border-gray-700">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDefaultVariantImageMode("url");
+                          setDefaultVariantImageFile(null);
+                          setDefaultVariantImagePreview(defaultVariantImageUrl);
+                        }}
+                        className={`px-3 py-1.5 font-medium transition-colors ${defaultVariantImageMode === "url" ? "bg-brand-500 text-white" : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5"}`}
+                      >
+                        URL
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDefaultVariantImageMode("file");
+                          setDefaultVariantImageUrl("");
+                          setDefaultVariantImagePreview("");
+                        }}
+                        className={`px-3 py-1.5 font-medium transition-colors ${defaultVariantImageMode === "file" ? "bg-brand-500 text-white" : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5"}`}
+                      >
+                        Từ máy
+                      </button>
+                    </div>
+                  </div>
+                  {defaultVariantImageMode === "url" ? (
+                    <input
+                      type="text"
+                      value={defaultVariantImageUrl}
+                      onChange={(e) => {
+                        setDefaultVariantImageUrl(e.target.value);
+                        setDefaultVariantImagePreview(e.target.value);
+                      }}
+                      placeholder="https://example.com/image.jpg"
+                      className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90"
+                    />
+                  ) : (
+                    <div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        ref={defaultVariantFileInputRef}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] ?? null;
+                          if (!file) return;
+                          setDefaultVariantImageFile(file);
+                          setDefaultVariantImagePreview(URL.createObjectURL(file));
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => defaultVariantFileInputRef.current?.click()}
+                        className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 py-5 text-sm text-gray-500 transition-colors hover:border-brand-400 hover:text-brand-500 dark:border-gray-600 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:text-brand-400"
+                      >
+                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                        {defaultVariantImageFile ? (
+                          <span className="font-medium text-brand-500">{defaultVariantImageFile.name}</span>
+                        ) : (
+                          <span>Nhấn để chọn ảnh từ máy</span>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                  {defaultVariantImagePreview && (
+                    <div className="mt-2 flex items-center gap-3">
+                      <img src={defaultVariantImagePreview} alt="" className="h-16 w-16 rounded-lg border border-gray-200 object-cover dark:border-gray-700" />
+                      <span className="max-w-xs truncate text-xs text-gray-400">{defaultVariantImagePreview}</span>
+                    </div>
+                  )}
+                  <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">Để trống để dùng ảnh đầu tiên của sản phẩm</p>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-6">
