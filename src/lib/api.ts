@@ -488,6 +488,7 @@ export interface ProductVariant {
   productId: number;
   colorName: string;
   slug: string | null;
+  fullSlug: string | null;
   colorCode: string;
   imageUrl: string | null;
   price: number | null;

@@ -32,6 +32,7 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
 
   const [colorName, setColorName] = useState("");
   const [slug, setSlug] = useState("");
+  const [initialSlugCode, setInitialSlugCode] = useState("");
   const [colorCode, setColorCode] = useState("FFFFFF");
   const [imageMode, setImageMode] = useState<ImageMode>("url");
   const [imageUrl, setImageUrl] = useState("");
@@ -51,9 +52,9 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
         if (mode === "edit" && variantId) {
           const variantData = await getProductVariantById(variantId);
           setColorName(variantData.colorName || "");
-          const fullSlug = variantData.slug || "";
-          const lastDash = fullSlug.lastIndexOf("-");
-          setSlug(lastDash >= 0 ? fullSlug.substring(lastDash + 1) : fullSlug);
+          const rawSlug = variantData.slug || "";
+          setSlug(rawSlug);
+          setInitialSlugCode(rawSlug);
           setColorCode((variantData.colorCode || "FFFFFF").replace("#", "").toUpperCase());
           setImageUrl(variantData.imageUrl || "");
           setImagePreview(variantData.imageUrl || "");
@@ -147,9 +148,10 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
         }
         success("Thêm biến thể thành công");
       } else if (variantId) {
+        const slugChanged = slug.trim() !== initialSlugCode;
         await updateProductVariant(variantId, {
           colorName: colorName.trim(),
-          slug: slug.trim() || undefined,
+          slug: slugChanged ? (slug.trim() || undefined) : undefined,
           colorCode: colorCode.trim().toUpperCase(),
           imageUrl: imageMode === "url" ? imageUrl.trim() || undefined : undefined,
           isActive,
