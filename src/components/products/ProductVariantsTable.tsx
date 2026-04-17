@@ -7,6 +7,7 @@ import {
   deleteProductVariant,
   getProductById,
   getProductVariants,
+  resolveSafeVariantSlug,
 } from "@/lib/api";
 import type { Product, ProductVariant } from "@/lib/api";
 import { useToast } from "@/components/ui/toast/Toast";
@@ -39,12 +40,13 @@ export default function ProductVariantsTable({ productId }: Props) {
         getProductById(productId),
         getProductVariants(productId, page, pageSize),
       ]);
+
       setProduct(productData);
       setVariants(variantData.items);
       setTotalPages(variantData.totalPages);
       setTotalCount(variantData.totalCount);
     } catch (err: unknown) {
-      toastError(err instanceof Error ? err.message : "Lỗi tải dữ liệu");
+      toastError(err instanceof Error ? err.message : "Loi tai du lieu");
     } finally {
       setLoading(false);
     }
@@ -61,15 +63,16 @@ export default function ProductVariantsTable({ productId }: Props) {
 
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
+
     setDeleting(true);
     try {
       await deleteProductVariant(deleteTarget.id);
       setConfirmOpen(false);
       setDeleteTarget(null);
-      success(`Đã xóa biến thể "${deleteTarget.colorName}"`);
+      success(`Da xoa bien the "${deleteTarget.colorName}"`);
       await fetchData();
     } catch (err: unknown) {
-      toastError(err instanceof Error ? err.message : "Xóa thất bại");
+      toastError(err instanceof Error ? err.message : "Xoa that bai");
     } finally {
       setDeleting(false);
     }
@@ -85,9 +88,9 @@ export default function ProductVariantsTable({ productId }: Props) {
     <div>
       <ConfirmDialog
         open={confirmOpen}
-        title="Xóa biến thể"
-        message={`Bạn có chắc muốn xóa biến thể "${deleteTarget?.colorName}"? Hành động này không thể hoàn tác.`}
-        confirmLabel="Xóa"
+        title="Xoa bien the"
+        message={`Ban co chac muon xoa bien the "${deleteTarget?.colorName}"? Hanh dong nay khong the hoan tac.`}
+        confirmLabel="Xoa"
         loading={deleting}
         onConfirm={handleDeleteConfirm}
         onCancel={handleDeleteCancel}
@@ -95,7 +98,7 @@ export default function ProductVariantsTable({ productId }: Props) {
 
       <nav className="mb-6 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
         <Link href="/products" className="transition-colors hover:text-brand-500">
-          Sản phẩm
+          San pham
         </Link>
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -106,15 +109,15 @@ export default function ProductVariantsTable({ productId }: Props) {
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
-        <span className="font-medium text-gray-800 dark:text-white/80">Biến thể</span>
+        <span className="font-medium text-gray-800 dark:text-white/80">Bien the</span>
       </nav>
 
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90">Biến thể sản phẩm</h1>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90">Bien the san pham</h1>
           {product && (
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {product.name} - Tổng cộng {totalCount} biến thể
+              {product.name} - Tong cong {totalCount} bien the
             </p>
           )}
         </div>
@@ -126,7 +129,7 @@ export default function ProductVariantsTable({ productId }: Props) {
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Quay lại
+            Quay lai
           </button>
           <Link
             href={`/products/${productId}/variants/create`}
@@ -135,7 +138,7 @@ export default function ProductVariantsTable({ productId }: Props) {
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            Thêm biến thể
+            Them bien the
           </Link>
         </div>
       </div>
@@ -146,18 +149,19 @@ export default function ProductVariantsTable({ productId }: Props) {
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
                 <th className="w-16 px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">ID</th>
-                <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Màu sắc</th>
-                <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Mã màu</th>
-                <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Hình ảnh</th>
-                <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Trạng thái</th>
-                <th className="px-5 py-4 text-right font-semibold text-gray-600 dark:text-gray-400">Thao tác</th>
+                <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Mau sac</th>
+                <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Slug</th>
+                <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Ma mau</th>
+                <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Hinh anh</th>
+                <th className="px-5 py-4 text-left font-semibold text-gray-600 dark:text-gray-400">Trang thai</th>
+                <th className="px-5 py-4 text-right font-semibold text-gray-600 dark:text-gray-400">Thao tac</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="border-b border-gray-100 dark:border-gray-800">
-                    {Array.from({ length: 6 }).map((__, j) => (
+                    {Array.from({ length: 7 }).map((__, j) => (
                       <td key={j} className="px-5 py-4">
                         <div className="h-4 w-full animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
                       </td>
@@ -166,8 +170,8 @@ export default function ProductVariantsTable({ productId }: Props) {
                 ))
               ) : variants.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center text-gray-400">
-                    Chưa có biến thể nào
+                  <td colSpan={7} className="px-5 py-12 text-center text-gray-400">
+                    Chua co bien the nao
                   </td>
                 </tr>
               ) : (
@@ -184,6 +188,18 @@ export default function ProductVariantsTable({ productId }: Props) {
                           style={{ backgroundColor: `#${variant.colorCode}` }}
                         />
                         <span className="font-medium text-gray-800 dark:text-white/90">{variant.colorName}</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex flex-col gap-1">
+                        <span className="font-mono text-xs text-gray-600 dark:text-gray-300">
+                          {resolveSafeVariantSlug(variant.slug, variant.colorName)}
+                        </span>
+                        {!variant.slug?.trim() ? (
+                          <span className="text-[11px] text-amber-600 dark:text-amber-400">
+                            Fallback tu ten mau
+                          </span>
+                        ) : null}
                       </div>
                     </td>
                     <td className="px-5 py-4">
@@ -212,7 +228,7 @@ export default function ProductVariantsTable({ productId }: Props) {
                     <td className="px-5 py-4">
                       <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${variant.isActive ? "bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-400" : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"}`}>
                         <span className={`h-1.5 w-1.5 rounded-full ${variant.isActive ? "bg-green-500" : "bg-gray-400"}`} />
-                        {variant.isActive ? "Hoạt động" : "Ẩn"}
+                        {variant.isActive ? "Hoat dong" : "An"}
                       </span>
                     </td>
                     <td className="px-5 py-4">
@@ -224,7 +240,7 @@ export default function ProductVariantsTable({ productId }: Props) {
                           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
-                          Ảnh
+                          Anh
                         </Link>
                         <Link
                           href={`/products/${productId}/variants/${variant.id}/edit`}
@@ -233,7 +249,7 @@ export default function ProductVariantsTable({ productId }: Props) {
                           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
-                          Sửa
+                          Sua
                         </Link>
                         <button
                           onClick={() => openDeleteConfirm(variant.id, variant.colorName)}
@@ -242,7 +258,7 @@ export default function ProductVariantsTable({ productId }: Props) {
                           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
-                          Xóa
+                          Xoa
                         </button>
                       </div>
                     </td>
@@ -260,7 +276,7 @@ export default function ProductVariantsTable({ productId }: Props) {
             totalCount={totalCount}
             pageSize={pageSize}
             onPageChange={setPage}
-            label="biến thể"
+            label="bien the"
           />
         )}
       </div>

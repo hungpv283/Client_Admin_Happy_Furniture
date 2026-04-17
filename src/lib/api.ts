@@ -515,6 +515,38 @@ export interface ProductVariant {
   images: ProductVariantImage[];
 }
 
+export function buildVariantSlug(colorName: string): string {
+  return colorName
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
+}
+
+export function resolveVariantSlug(slug: string | null | undefined, colorName: string): string {
+  const normalizedSlug = slug?.trim();
+  return normalizedSlug || buildVariantSlug(colorName);
+}
+
+export function buildSafeVariantSlug(colorName: string): string {
+  return colorName
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\u0111/g, "d")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
+}
+
+export function resolveSafeVariantSlug(slug: string | null | undefined, colorName: string): string {
+  const normalizedSlug = slug?.trim();
+  return normalizedSlug || buildSafeVariantSlug(colorName);
+}
+
 export interface CreateProductVariantData {
   productId: number;
   colorName: string;

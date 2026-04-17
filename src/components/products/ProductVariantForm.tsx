@@ -4,10 +4,12 @@ import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
+  buildSafeVariantSlug,
   createProductVariant,
   createProductVariantWithImage,
   getProductById,
   getProductVariantById,
+  resolveSafeVariantSlug,
   updateProductVariant,
 } from "@/lib/api";
 import type { Product } from "@/lib/api";
@@ -62,12 +64,11 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
         if (mode === "edit" && resolvedVariantId) {
           const variantData = await getProductVariantById(resolvedVariantId);
           setColorName(variantData.colorName || "");
-          const rawSlug = variantData.slug || "";
+          const rawSlug = resolveSafeVariantSlug(variantData.slug, variantData.colorName || "");
           setSlug(rawSlug);
           setInitialSlugCode(rawSlug);
 
           setColorNameEn(variantData.colorNameEn || "");
-          setSlug(variantData.slug || "");
           setColorCode((variantData.colorCode || "FFFFFF").replace("#", "").toUpperCase());
           setImageUrl(variantData.imageUrl || "");
           setImagePreview(variantData.imageUrl || "");
@@ -83,16 +84,9 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
     load();
   }, [mode, productId, resolvedVariantId, toastError]);
 
-  const generateSlug = (value: string) =>
-    value.toLowerCase()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-      .replace(/đ/g, "d")
-      .replace(/[^a-z0-9\s-]/g, "")
-      .trim().replace(/\s+/g, "-");
-
   const handleColorNameChange = (value: string) => {
     setColorName(value);
-    if (mode === "create") setSlug(generateSlug(value));
+    if (mode === "create") setSlug(buildSafeVariantSlug(value));
   };
 
   const validate = (): boolean => {
@@ -274,11 +268,11 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
                 <input
                   type="text"
                   value={slug}
-                  onChange={(e) => setSlug(e.target.value)}
+                  onChange={(e) => setSlug(buildSafeVariantSlug(e.target.value))}
                   placeholder="VD: mau-trang, xanh-navy, ..."
                   className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90"
                 />
-                <p className="mt-1 text-xs text-gray-400">Tự động tạo từ tên màu. Dùng để nối URL khi chọn màu.</p>
+                <p className="mt-1 text-xs text-gray-400">Tự động tạo từ tên màu. Nếu API trả slug rỗng, form sẽ dùng giá trị này làm fallback.</p>
               </div>
 
               <div className="mb-5">
