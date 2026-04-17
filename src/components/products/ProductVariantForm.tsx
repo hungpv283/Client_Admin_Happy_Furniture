@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   createProduct,
   createProductImageWithImage,
@@ -37,11 +37,24 @@ const newEntry = (): ImageEntry => ({ mode: "file", url: "", file: null, preview
 
 export default function ProductForm({ mode, productId }: Props) {
   const router = useRouter();
+  const params = useParams<{ variantId?: string }>();
   const { success, error: toastError } = useToast();
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const [name, setName] = useState("");
-  const [nameEn, setNameEn] = useState("");
+  const routeVariantId = params?.variantId ? Number(params.variantId) : undefined;
+  const resolvedVariantId =
+    typeof variantId === "number" && Number.isFinite(variantId)
+      ? variantId
+      : typeof routeVariantId === "number" && Number.isFinite(routeVariantId)
+        ? routeVariantId
+        : undefined;
+
+  const [product, setProduct] = useState<Product | null>(null);
+  const [fetching, setFetching] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  const [colorName, setColorName] = useState("");
+  const [colorNameEn, setColorNameEn] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [descriptionEn, setDescriptionEn] = useState("");
@@ -83,62 +96,29 @@ export default function ProductForm({ mode, productId }: Props) {
   const [fetching, setFetching] = useState(mode === "edit");
 
   useEffect(() => {
-    getCategories(1, 100).then((data) => setAllCategories(data.items)).catch(() => { });
-    getRootCategories().then(setRootCategories).catch(() => { });
-    getActiveMaterials().then((data) => setAllMaterials(data)).catch(() => { });
-    getActiveAssemblies().then((data) => setAllAssemblies(data)).catch(() => { });
-  }, []);
+    const load = async () => {
+      setFetching(true);
+      try {
+        const productData = await getProductById(productId);
+        setProduct(productData);
 
-  useEffect(() => {
-    if (mode !== "edit" || !productId) return;
-    setFetching(true);
-    getProductById(productId)
-      .then((product) => {
-        setName(product.name);
-        setNameEn(product.nameEn || "");
-        setSlug(product.slug);
-        setDescription(product.description || "");
-        setDescriptionEn(product.descriptionEn || "");
-        setDimensionsHeight(product.dimensionsHeight ?? "");
-        setDimensionsWidth(product.dimensionsWidth ?? "");
-        setDimensionsDepth(product.dimensionsDepth ?? "");
-        setDimensionUnit(product.dimensionUnit || "cm");
-        setDetail(product.detail || "");
-        setDetailEn(product.detailEn || "");
-        setDeliveryInfo(product.deliveryInfo || "");
-        setDeliveryInfoEn(product.deliveryInfoEn || "");
-        setWeight(product.weight ?? "");
-        setDeliveryHeight(product.deliveryHeight ?? "");
-        setDeliveryWidth(product.deliveryWidth ?? "");
-        setDeliveryDepth(product.deliveryDepth ?? "");
-        setIsFeatured(product.isFeatured);
-        setIsActive(product.isActive);
-        setAssemblyId(product.assemblyId ?? "");
-        setSelectedParentCategoryIds(product.categories.filter((x) => x.parentId == null).map((x) => x.id));
-        setSelectedChildCategoryIds(product.categories.filter((x) => x.parentId != null).map((x) => x.id));
-        setSelectedMaterialIds(product.materials?.map((x) => x.id) ?? product.materialIds ?? []);
-        const validImages = product.images
-          .filter((img) => img.imageUrl)
-          .sort((a, b) => a.id - b.id);
-        if (validImages.length) {
-          setImages(
-            validImages.map((img) => ({
-              mode: "url" as ImageMode,
-              url: img.imageUrl,
-              file: null,
-              preview: img.imageUrl,
-              imageId: img.id,
-            }))
-          );
-        } else {
-          setImages([newEntry()]);
+        if (mode === "edit" && resolvedVariantId) {
+          const variantData = await getProductVariantById(resolvedVariantId);
+          setColorName(variantData.colorName || "");
+          setColorNameEn(variantData.colorNameEn || "");
+          setSlug(variantData.slug || "");
+          setColorCode((variantData.colorCode || "FFFFFF").replace("#", "").toUpperCase());
+          setImageUrl(variantData.imageUrl || "");
+          setImagePreview(variantData.imageUrl || "");
+          setIsActive(variantData.isActive);
         }
       })
       .catch(() => toastError("Không thể tải thông tin sản phẩm"))
       .finally(() => setFetching(false));
   }, [mode, productId, toastError]);
 
-  const childCategories = allCategories.filter((x) => x.parentId != null);
+    load();
+  }, [mode, productId, resolvedVariantId, toastError]);
 
   // 子分类：根据选中的父分类进行筛选
   const filteredChildCategories = selectedParentCategoryIds.length > 0
@@ -275,6 +255,17 @@ export default function ProductForm({ mode, productId }: Props) {
             });
           }
         }
+        success("Thêm biến thể thành công");
+      } else if (resolvedVariantId) {
+        await updateProductVariant(resolvedVariantId, {
+          colorName: colorName.trim(),
+          colorNameEn: colorNameEn.trim() || undefined,
+          slug: slug.trim() || undefined,
+          colorCode: colorCode.trim().toUpperCase(),
+          imageUrl: imageMode === "url" ? imageUrl.trim() || undefined : undefined,
+          isActive,
+        });
+        success("Cập nhật biến thể thành công");
       }
       success(mode === "create" ? "Tạo sản phẩm thành công!" : "Cập nhật sản phẩm thành công!");
       router.push("/products");
