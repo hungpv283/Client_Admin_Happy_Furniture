@@ -136,16 +136,17 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
 
     setSubmitting(true);
     try {
-      if (mode === "create") {
-        if (imageMode === "file" && imageFile) {
-          await createProductVariantWithImage({
-            productId,
-            colorName: colorName.trim(),
-            colorNameEn: colorNameEn.trim() || undefined,
-            colorCode: colorCode.trim().toUpperCase(),
-            isActive,
-            image: imageFile,
-          });
+        if (mode === "create") {
+          if (imageMode === "file" && imageFile) {
+            await createProductVariantWithImage({
+              productId,
+              colorName: colorName.trim(),
+              colorNameEn: colorNameEn.trim() || undefined,
+              slug: slug.trim() || undefined,
+              colorCode: colorCode.trim().toUpperCase(),
+              isActive,
+              image: imageFile,
+            });
         } else {
           await createProductVariant({
             productId,
