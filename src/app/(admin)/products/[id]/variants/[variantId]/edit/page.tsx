@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import ProductVariantForm from "@/components/products/ProductVariantForm";
 
 export const metadata: Metadata = {
-  title: "Sửa biến thể | Happy Furniture Admin",
+  title: "Sửa biến thể | Happy Furniture Admin ",
 };
 
 export default async function EditVariantPage({
