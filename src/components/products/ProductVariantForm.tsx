@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   createProductVariant,
   createProductVariantWithImage,
@@ -23,8 +23,17 @@ type ImageMode = "url" | "file";
 
 export default function ProductVariantForm({ mode, productId, variantId }: Props) {
   const router = useRouter();
+  const params = useParams<{ variantId?: string }>();
   const { success, error: toastError } = useToast();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const routeVariantId = params?.variantId ? Number(params.variantId) : undefined;
+  const resolvedVariantId =
+    typeof variantId === "number" && Number.isFinite(variantId)
+      ? variantId
+      : typeof routeVariantId === "number" && Number.isFinite(routeVariantId)
+        ? routeVariantId
+        : undefined;
 
   const [product, setProduct] = useState<Product | null>(null);
   const [fetching, setFetching] = useState(true);
@@ -49,8 +58,8 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
         const productData = await getProductById(productId);
         setProduct(productData);
 
-        if (mode === "edit" && variantId) {
-          const variantData = await getProductVariantById(variantId);
+        if (mode === "edit" && resolvedVariantId) {
+          const variantData = await getProductVariantById(resolvedVariantId);
           setColorName(variantData.colorName || "");
           setColorNameEn(variantData.colorNameEn || "");
           setSlug(variantData.slug || "");
@@ -67,7 +76,7 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
     };
 
     load();
-  }, [mode, productId, variantId, toastError]);
+  }, [mode, productId, resolvedVariantId, toastError]);
 
   const generateSlug = (value: string) =>
     value.toLowerCase()
@@ -149,8 +158,8 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
           });
         }
         success("Thêm biến thể thành công");
-      } else if (variantId) {
-        await updateProductVariant(variantId, {
+      } else if (resolvedVariantId) {
+        await updateProductVariant(resolvedVariantId, {
           colorName: colorName.trim(),
           colorNameEn: colorNameEn.trim() || undefined,
           slug: slug.trim() || undefined,

@@ -10,13 +10,12 @@ export default async function EditVariantPage({
 }: {
   params: Promise<{ id: string; variantId: string }>;
 }) {
-  const { id, variantId } = await params;
+  const { id } = await params;
   return (
     <div>
       <ProductVariantForm
         mode="edit"
         productId={Number(id)}
-        variantId={Number(variantId)}
       />
     </div>
   );
