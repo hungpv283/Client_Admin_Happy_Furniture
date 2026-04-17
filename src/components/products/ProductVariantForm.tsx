@@ -31,6 +31,7 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
   const [submitting, setSubmitting] = useState(false);
 
   const [colorName, setColorName] = useState("");
+  const [colorNameEn, setColorNameEn] = useState("");
   const [slug, setSlug] = useState("");
   const [colorCode, setColorCode] = useState("FFFFFF");
   const [imageMode, setImageMode] = useState<ImageMode>("url");
@@ -51,6 +52,7 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
         if (mode === "edit" && variantId) {
           const variantData = await getProductVariantById(variantId);
           setColorName(variantData.colorName || "");
+          setColorNameEn(variantData.colorNameEn || "");
           setSlug(variantData.slug || "");
           setColorCode((variantData.colorCode || "FFFFFF").replace("#", "").toUpperCase());
           setImageUrl(variantData.imageUrl || "");
@@ -130,6 +132,7 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
           await createProductVariantWithImage({
             productId,
             colorName: colorName.trim(),
+            colorNameEn: colorNameEn.trim() || undefined,
             colorCode: colorCode.trim().toUpperCase(),
             isActive,
             image: imageFile,
@@ -138,6 +141,7 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
           await createProductVariant({
             productId,
             colorName: colorName.trim(),
+            colorNameEn: colorNameEn.trim() || undefined,
             slug: slug.trim() || undefined,
             colorCode: colorCode.trim().toUpperCase(),
             imageUrl: imageUrl.trim() || undefined,
@@ -148,6 +152,7 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
       } else if (variantId) {
         await updateProductVariant(variantId, {
           colorName: colorName.trim(),
+          colorNameEn: colorNameEn.trim() || undefined,
           slug: slug.trim() || undefined,
           colorCode: colorCode.trim().toUpperCase(),
           imageUrl: imageMode === "url" ? imageUrl.trim() || undefined : undefined,
@@ -217,22 +222,36 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
                 Thông tin biến thể
               </h2>
 
-              <div className="mb-5">
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Tên màu <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={colorName}
-                  onChange={(e) => handleColorNameChange(e.target.value)}
-                  placeholder="VD: Xám nhạt, Xanh navy, ..."
-                  className={`w-full rounded-xl border bg-white px-4 py-2.5 text-sm outline-none transition-colors dark:bg-white/5 dark:text-white/90 ${
-                    errors.colorName
-                      ? "border-red-400 dark:border-red-500 focus:border-red-500"
-                      : "border-gray-200 dark:border-gray-700 focus:border-brand-500 dark:focus:border-brand-500"
-                  }`}
-                />
-                {errors.colorName && <p className="mt-1 text-xs text-red-500">{errors.colorName}</p>}
+              <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Tên màu (VI) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={colorName}
+                    onChange={(e) => handleColorNameChange(e.target.value)}
+                    placeholder="VD: Xám nhạt, Xanh navy, ..."
+                    className={`w-full rounded-xl border bg-white px-4 py-2.5 text-sm outline-none transition-colors dark:bg-white/5 dark:text-white/90 ${
+                      errors.colorName
+                        ? "border-red-400 dark:border-red-500 focus:border-red-500"
+                        : "border-gray-200 dark:border-gray-700 focus:border-brand-500 dark:focus:border-brand-500"
+                    }`}
+                  />
+                  {errors.colorName && <p className="mt-1 text-xs text-red-500">{errors.colorName}</p>}
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Tên màu (EN)
+                  </label>
+                  <input
+                    type="text"
+                    value={colorNameEn}
+                    onChange={(e) => setColorNameEn(e.target.value)}
+                    placeholder="VD: Light Gray, Navy Blue, ..."
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90"
+                  />
+                </div>
               </div>
 
               <div className="mb-5">
@@ -381,6 +400,9 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
                 )}
                 <div className="text-center">
                   <p className="text-sm font-medium text-gray-800 dark:text-white/90">{colorName || "Tên màu"}</p>
+                  {colorNameEn && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{colorNameEn}</p>
+                  )}
                   <p className="mt-0.5 font-mono text-xs text-gray-400">#{colorCode.toUpperCase() || "FFFFFF"}</p>
                 </div>
               </div>
