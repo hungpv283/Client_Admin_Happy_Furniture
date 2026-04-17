@@ -1,4 +1,3 @@
-import { Outfit } from 'next/font/google';
 import type { Metadata } from 'next';
 import './globals.css';
 import "flatpickr/dist/flatpickr.css";
@@ -6,10 +5,6 @@ import { SidebarProvider } from '@/context/SidebarContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { ToastProvider } from '@/components/ui/toast/Toast';
-
-const outfit = Outfit({
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   icons: {
@@ -26,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${outfit.className} dark:bg-gray-900`} suppressHydrationWarning>
+      <body className="font-outfit dark:bg-gray-900" suppressHydrationWarning>
         <ThemeProvider>
             <AuthProvider>
               <ToastProvider>

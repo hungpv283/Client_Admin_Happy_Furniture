@@ -141,17 +141,17 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
 
     setSubmitting(true);
     try {
-        if (mode === "create") {
-          if (imageMode === "file" && imageFile) {
-            await createProductVariantWithImage({
-              productId,
-              colorName: colorName.trim(),
-              colorNameEn: colorNameEn.trim() || undefined,
-              slug: slug.trim() || undefined,
-              colorCode: colorCode.trim().toUpperCase(),
-              isActive,
-              image: imageFile,
-            });
+      if (mode === "create") {
+        if (imageMode === "file" && imageFile) {
+          await createProductVariantWithImage({
+            productId,
+            colorName: colorName.trim(),
+            colorNameEn: colorNameEn.trim() || undefined,
+            slug: slug.trim() || undefined,
+            colorCode: colorCode.trim().toUpperCase(),
+            isActive,
+            image: imageFile,
+          });
         } else {
           await createProductVariant({
             productId,
@@ -164,16 +164,12 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
           });
         }
         success("Thêm biến thể thành công");
-      } else if (variantId) {
-        const slugChanged = slug.trim() !== initialSlugCode;
-        await updateProductVariant(variantId, {
-          colorName: colorName.trim(),
-          slug: slugChanged ? (slug.trim() || undefined) : undefined,
       } else if (resolvedVariantId) {
+        const slugChanged = slug.trim() !== initialSlugCode;
         await updateProductVariant(resolvedVariantId, {
           colorName: colorName.trim(),
           colorNameEn: colorNameEn.trim() || undefined,
-          slug: slug.trim() || undefined,
+          slug: slugChanged ? (slug.trim() || undefined) : undefined,
           colorCode: colorCode.trim().toUpperCase(),
           imageUrl: imageMode === "url" ? imageUrl.trim() || undefined : undefined,
           isActive,
