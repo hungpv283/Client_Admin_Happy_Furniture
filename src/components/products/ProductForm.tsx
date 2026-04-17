@@ -76,8 +76,8 @@ export default function ProductForm({ mode, productId }: Props) {
   useEffect(() => {
     getCategories(1, 100).then((data) => setAllCategories(data.items)).catch(() => { });
     getRootCategories().then(setRootCategories).catch(() => { });
-    getActiveMaterials().then((data) => setAllMaterials(data.items ?? [])).catch(() => { });
-    getActiveAssemblies().then((data) => setAllAssemblies(data.items ?? [])).catch(() => { });
+    getActiveMaterials().then((data) => setAllMaterials(data)).catch(() => { });
+    getActiveAssemblies().then((data) => setAllAssemblies(data)).catch(() => { });
   }, []);
 
   useEffect(() => {
