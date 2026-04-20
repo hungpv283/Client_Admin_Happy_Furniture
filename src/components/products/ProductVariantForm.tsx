@@ -1,16 +1,16 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
-  buildSafeVariantSlug,
   createProductVariant,
   createProductVariantWithImage,
   getProductById,
   getProductVariantById,
   resolveSafeVariantSlug,
   updateProductVariant,
+  uploadSingleImage,
 } from "@/lib/api";
 import type { Product } from "@/lib/api";
 import { useToast } from "@/components/ui/toast/Toast";
@@ -44,13 +44,13 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
   const [colorName, setColorName] = useState("");
   const [colorNameEn, setColorNameEn] = useState("");
   const [slug, setSlug] = useState("");
-  const [initialSlugCode, setInitialSlugCode] = useState("");
   const [colorCode, setColorCode] = useState("FFFFFF");
   const [imageMode, setImageMode] = useState<ImageMode>("url");
   const [imageUrl, setImageUrl] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [isDefault, setIsDefault] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -64,15 +64,14 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
         if (mode === "edit" && resolvedVariantId) {
           const variantData = await getProductVariantById(resolvedVariantId);
           setColorName(variantData.colorName || "");
-          const rawSlug = resolveSafeVariantSlug(variantData.slug, variantData.colorName || "");
-          setSlug(rawSlug);
-          setInitialSlugCode(rawSlug);
+          setSlug(resolveSafeVariantSlug(variantData.slug, variantData.colorName || ""));
 
           setColorNameEn(variantData.colorNameEn || "");
           setColorCode((variantData.colorCode || "FFFFFF").replace("#", "").toUpperCase());
           setImageUrl(variantData.imageUrl || "");
           setImagePreview(variantData.imageUrl || "");
           setIsActive(variantData.isActive);
+          setIsDefault(variantData.isDefault);
         }
       } catch (err: unknown) {
         toastError(err instanceof Error ? err.message : "Lỗi tải dữ liệu");
@@ -86,7 +85,6 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
 
   const handleColorNameChange = (value: string) => {
     setColorName(value);
-    if (mode === "create") setSlug(buildSafeVariantSlug(value));
   };
 
   const validate = (): boolean => {
@@ -102,7 +100,7 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
       newErrors.imageUrl = "URL ảnh không được vượt quá 500 ký tự";
     }
 
-    if (imageMode === "file" && !imageFile) {
+    if (imageMode === "file" && mode === "create" && !imageFile) {
       newErrors.imageFile = "Vui lòng chọn ảnh từ máy";
     }
 
@@ -112,9 +110,13 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
 
   const handleImageModeSwitch = (modeValue: ImageMode) => {
     setImageMode(modeValue);
-    setImageUrl("");
-    setImageFile(null);
-    setImagePreview("");
+    if (modeValue === "url") {
+      // Restore the current image URL for editing
+      setImageUrl(imagePreview);
+    } else {
+      // In file mode, keep current image as fallback preview until a new file is selected
+      setImageFile(null);
+    }
     setErrors((prev) => {
       const next = { ...prev };
       delete next.imageUrl;
@@ -159,13 +161,28 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
         }
         success("Thêm biến thể thành công");
       } else if (resolvedVariantId) {
-        const slugChanged = slug.trim() !== initialSlugCode;
+        // When editing with file mode, upload the file first to get the URL
+        let finalImageUrl: string | null | undefined;
+        if (imageMode === "file" && imageFile) {
+          try {
+            const uploadResult = await uploadSingleImage(imageFile, "product-variants");
+            finalImageUrl = uploadResult.imageUrl;
+          } catch (uploadErr: unknown) {
+            toastError(uploadErr instanceof Error ? uploadErr.message : "Upload ảnh thất bại");
+            setSubmitting(false);
+            return;
+          }
+        } else if (imageMode === "url") {
+          finalImageUrl = imageUrl.trim() || null;
+        }
+        // else imageMode === "file" with no new file → keep existing, don't send imageUrl at all
+
         await updateProductVariant(resolvedVariantId, {
           colorName: colorName.trim(),
           colorNameEn: colorNameEn.trim() || undefined,
-          slug: slugChanged ? (slug.trim() || undefined) : undefined,
+          slug: slug.trim() || undefined,
           colorCode: colorCode.trim().toUpperCase(),
-          imageUrl: imageMode === "url" ? imageUrl.trim() || undefined : undefined,
+          imageUrl: finalImageUrl,
           isActive,
         });
         success("Cập nhật biến thể thành công");
@@ -263,17 +280,24 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
                 </div>
               </div>
 
-              <div className="mb-5">
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Slug màu</label>
-                <input
-                  type="text"
-                  value={slug}
-                  onChange={(e) => setSlug(buildSafeVariantSlug(e.target.value))}
-                  placeholder="VD: mau-trang, xanh-navy, ..."
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90"
-                />
-                <p className="mt-1 text-xs text-gray-400">Tự động tạo từ tên màu. Nếu API trả slug rỗng, form sẽ dùng giá trị này làm fallback.</p>
-              </div>
+              {isDefault ? (
+                <div className="mb-5 rounded-xl border border-brand-100 bg-brand-50 px-4 py-3 dark:border-brand-500/20 dark:bg-brand-500/10">
+                  <p className="text-xs text-brand-600 dark:text-brand-400">
+                    Biến thể mặc định — slug lấy trực tiếp từ sản phẩm, không cần nhập riêng.
+                  </p>
+                </div>
+              ) : (
+                <div className="mb-5">
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Slug màu</label>
+                  <input
+                    type="text"
+                    value={slug}
+                    onChange={(e) => setSlug(e.target.value)}
+                    placeholder="VD: mau-trang, xanh-navy, ..."
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white/90"
+                  />
+                </div>
+              )}
 
               <div className="mb-5">
                 <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -373,11 +397,6 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
                       </svg>
                       {imageFile ? <span className="font-medium text-brand-500">{imageFile.name}</span> : <span>Nhấn để chọn ảnh từ máy</span>}
                     </button>
-                    {mode === "edit" && (
-                      <p className="mt-1 text-xs text-amber-500">
-                        Chế độ sửa hiện đang cập nhật bằng `imageUrl`. Upload file chỉ dùng cho tạo mới.
-                      </p>
-                    )}
                     {errors.imageFile && <p className="mt-1 text-xs text-red-500">{errors.imageFile}</p>}
                   </div>
                 )}

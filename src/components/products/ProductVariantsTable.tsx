@@ -187,19 +187,32 @@ export default function ProductVariantsTable({ productId }: Props) {
                           className="h-5 w-5 flex-shrink-0 rounded-full border border-gray-200 dark:border-gray-700"
                           style={{ backgroundColor: `#${variant.colorCode}` }}
                         />
-                        <span className="font-medium text-gray-800 dark:text-white/90">{variant.colorName}</span>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-medium text-gray-800 dark:text-white/90">{variant.colorName}</span>
+                          {variant.isDefault && (
+                            <span className="inline-flex w-fit items-center rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-semibold text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">
+                              Mặc định
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex flex-col gap-1">
-                        <span className="font-mono text-xs text-gray-600 dark:text-gray-300">
-                          {resolveSafeVariantSlug(variant.slug, variant.colorName)}
-                        </span>
-                        {!variant.slug?.trim() ? (
-                          <span className="text-[11px] text-amber-600 dark:text-amber-400">
-                            Fallback tu ten mau
-                          </span>
-                        ) : null}
+                        {variant.isDefault ? (
+                          <span className="text-xs italic text-gray-400 dark:text-gray-500">Dùng slug sản phẩm</span>
+                        ) : (
+                          <>
+                            <span className="font-mono text-xs text-gray-600 dark:text-gray-300">
+                              {resolveSafeVariantSlug(variant.slug, variant.colorName)}
+                            </span>
+                            {!variant.slug?.trim() && (
+                              <span className="text-[11px] text-amber-600 dark:text-amber-400">
+                                Fallback tu ten mau
+                              </span>
+                            )}
+                          </>
+                        )}
                       </div>
                     </td>
                     <td className="px-5 py-4">
@@ -251,15 +264,17 @@ export default function ProductVariantsTable({ productId }: Props) {
                           </svg>
                           Sua
                         </Link>
-                        <button
-                          onClick={() => openDeleteConfirm(variant.id, variant.colorName)}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100 dark:bg-red-500/15 dark:text-red-400 dark:hover:bg-red-500/25"
-                        >
-                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                          Xoa
-                        </button>
+                        {!variant.isDefault && (
+                          <button
+                            onClick={() => openDeleteConfirm(variant.id, variant.colorName)}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100 dark:bg-red-500/15 dark:text-red-400 dark:hover:bg-red-500/25"
+                          >
+                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            Xoa
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
