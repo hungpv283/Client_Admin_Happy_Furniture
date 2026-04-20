@@ -508,8 +508,8 @@ export interface ProductVariant {
   fullSlug: string | null;
   colorCode: string;
   imageUrl: string | null;
-  price: number | null;
   isActive: boolean;
+  isDefault: boolean;
   createdAt: string;
   updatedAt: string;
   images: ProductVariantImage[];
@@ -621,7 +621,10 @@ export async function createProductVariantWithImage(
   formData.append("colorName", data.colorName);
   if (data.colorNameEn) formData.append("colorNameEn", data.colorNameEn);
   formData.append("colorCode", data.colorCode);
-  if (data.slug) formData.append("slug", data.slug);
+  // Only send slug if explicitly provided; backend auto-generates when absent
+  if (data.slug != null && data.slug.trim() !== "") {
+    formData.append("slug", data.slug.trim());
+  }
   formData.append("isActive", data.isActive ? "true" : "false");
   formData.append("image", data.image);
 
@@ -663,6 +666,30 @@ export async function createVariantImageWithUpload(variantId: number, data: {
 
 export async function deleteVariantImage(imageId: number): Promise<void> {
   return request<void>(`/ProductVariants/images/${imageId}`, { method: "DELETE" });
+}
+
+export async function updateVariantImageWithUpload(
+  imageId: number,
+  data: {
+    image?: File | null;
+    imageUrl?: string | null;
+    isPrimary: boolean;
+    sortOrder: number;
+    altText?: string | null;
+  }
+): Promise<ProductVariantImage> {
+  const formData = new FormData();
+  if (data.image != null) formData.append("image", data.image);
+  if (data.imageUrl != null) formData.append("imageUrl", data.imageUrl);
+  formData.append("isPrimary", data.isPrimary ? "true" : "false");
+  formData.append("sortOrder", String(data.sortOrder));
+  if (data.altText != null) formData.append("altText", data.altText);
+
+  return requestMultipart<ProductVariantImage>(
+    `/ProductVariants/images/${imageId}/with-image`,
+    formData,
+    "PUT"
+  );
 }
 
 export async function setVariantImagePrimary(imageId: number): Promise<void> {
