@@ -603,6 +603,29 @@ export async function deleteProductVariant(id: number): Promise<void> {
   return request<void>(`/ProductVariants/${id}`, { method: "DELETE" });
 }
 
+export interface BulkVariantItemData {
+  colorName: string;
+  colorNameEn?: string | null;
+  slug?: string | null;
+  colorCode: string;
+  imageUrl?: string | null;
+  isActive: boolean;
+}
+
+export interface BulkCreateProductVariantsData {
+  productId: number;
+  variants: BulkVariantItemData[];
+}
+
+export async function bulkCreateProductVariants(
+  data: BulkCreateProductVariantsData
+): Promise<ProductVariant[]> {
+  return request<ProductVariant[]>("/ProductVariants/bulk", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
 export interface CreateProductVariantWithImageData {
   productId: number;
   colorName: string;
