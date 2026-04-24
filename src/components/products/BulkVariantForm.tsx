@@ -205,7 +205,7 @@ export default function BulkVariantForm({ productId }: Props) {
               key={row.id}
               row={row}
               index={index}
-              fileInputRef={(el) => el}
+              fileInputRef={() => {}}
               onUpdate={(patch) => updateRow(row.id, patch)}
               onRemove={() => removeRow(row.id)}
               onFileChange={(file) => handleFileChange(row.id, file)}
