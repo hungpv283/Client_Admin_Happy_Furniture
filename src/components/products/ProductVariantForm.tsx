@@ -51,6 +51,7 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
   const [imagePreview, setImagePreview] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [isDefault, setIsDefault] = useState(false);
+  const [useColorSwatch, setUseColorSwatch] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -72,6 +73,8 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
           setImagePreview(variantData.imageUrl || "");
           setIsActive(variantData.isActive);
           setIsDefault(variantData.isDefault);
+          // Nếu là default variant và không có ảnh riêng → bật swatch màu
+          setUseColorSwatch(variantData.isDefault && !variantData.imageUrl);
         }
       } catch (err: unknown) {
         toastError(err instanceof Error ? err.message : "Lỗi tải dữ liệu");
@@ -82,6 +85,16 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
 
     load();
   }, [mode, productId, resolvedVariantId, toastError]);
+
+  const handleColorSwatchToggle = (checked: boolean) => {
+    setUseColorSwatch(checked);
+    if (checked) {
+      setImageUrl("");
+      setImagePreview("");
+      setImageFile(null);
+      setImageMode("url");
+    }
+  };
 
   const handleColorNameChange = (value: string) => {
     setColorName(value);
@@ -96,12 +109,13 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
       newErrors.colorCode = "Mã màu phải gồm 6 ký tự HEX (VD: FF5733)";
     }
 
-    if (imageMode === "url" && imageUrl.trim() && imageUrl.trim().length > 500) {
-      newErrors.imageUrl = "URL ảnh không được vượt quá 500 ký tự";
-    }
-
-    if (imageMode === "file" && mode === "create" && !imageFile) {
-      newErrors.imageFile = "Vui lòng chọn ảnh từ máy";
+    if (!useColorSwatch) {
+      if (imageMode === "url" && imageUrl.trim() && imageUrl.trim().length > 500) {
+        newErrors.imageUrl = "URL ảnh không được vượt quá 500 ký tự";
+      }
+      if (imageMode === "file" && mode === "create" && !imageFile) {
+        newErrors.imageFile = "Vui lòng chọn ảnh từ máy";
+      }
     }
 
     setErrors(newErrors);
@@ -161,9 +175,11 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
         }
         success("Thêm biến thể thành công");
       } else if (resolvedVariantId) {
-        // When editing with file mode, upload the file first to get the URL
         let finalImageUrl: string | null | undefined;
-        if (imageMode === "file" && imageFile) {
+        if (useColorSwatch) {
+          // Dùng màu HEX làm swatch — xóa ảnh
+          finalImageUrl = null;
+        } else if (imageMode === "file" && imageFile) {
           try {
             const uploadResult = await uploadSingleImage(imageFile, "product-variants");
             finalImageUrl = uploadResult.imageUrl;
@@ -175,7 +191,7 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
         } else if (imageMode === "url") {
           finalImageUrl = imageUrl.trim() || null;
         }
-        // else imageMode === "file" with no new file → keep existing, don't send imageUrl at all
+        // else imageMode === "file" with no new file → keep existing imageUrl
 
         await updateProductVariant(resolvedVariantId, {
           colorName: colorName.trim(),
@@ -334,6 +350,32 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
                 <p className="mt-1.5 text-xs text-gray-400">Nhập 6 ký tự HEX hoặc chọn màu bên phải</p>
               </div>
 
+              {isDefault && mode === "edit" && (
+                <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 p-3 dark:border-blue-500/30 dark:bg-blue-500/10">
+                  <label className="flex cursor-pointer items-center gap-3">
+                    <div className="relative shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={useColorSwatch}
+                        onChange={(e) => handleColorSwatchToggle(e.target.checked)}
+                        className="sr-only"
+                      />
+                      <div className={`h-5 w-9 rounded-full transition-colors ${useColorSwatch ? "bg-brand-500" : "bg-gray-300 dark:bg-gray-600"}`} />
+                      <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${useColorSwatch ? "translate-x-4" : "translate-x-0.5"}`} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                        Dùng màu HEX thay ảnh swatch
+                      </p>
+                      <p className="text-xs text-blue-600 dark:text-blue-400">
+                        Bật để hiển thị ô màu từ mã HEX thay vì ảnh trên trang sản phẩm
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              )}
+
+              {!useColorSwatch && (
               <div>
                 <div className="mb-2 flex items-center justify-between">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Ảnh biến thể</label>
@@ -401,6 +443,7 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
                   </div>
                 )}
               </div>
+              )}
             </div>
           </div>
 
@@ -408,7 +451,7 @@ export default function ProductVariantForm({ mode, productId, variantId }: Props
             <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
               <h2 className="mb-4 text-base font-semibold text-gray-800 dark:text-white/90">Xem trước</h2>
               <div className="flex flex-col items-center gap-3 py-4">
-                {imagePreview ? (
+                {!useColorSwatch && imagePreview ? (
                   <img
                     src={imagePreview}
                     alt="preview"
