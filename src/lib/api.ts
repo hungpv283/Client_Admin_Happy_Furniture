@@ -719,6 +719,16 @@ export async function setVariantImagePrimary(imageId: number): Promise<void> {
   return request<void>(`/ProductVariants/images/${imageId}/set-primary`, { method: "POST" });
 }
 
+export async function bulkCreateVariantImages(
+  variantId: number,
+  images: { imageUrl: string; altText?: string | null }[]
+): Promise<ProductVariantImage[]> {
+  return request<ProductVariantImage[]>(`/ProductVariants/${variantId}/images/bulk`, {
+    method: "POST",
+    body: JSON.stringify({ images }),
+  });
+}
+
 export interface CreateCategoryWithImageData {
   name: string;
   nameEn?: string;
