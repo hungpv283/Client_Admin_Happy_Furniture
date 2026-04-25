@@ -8,6 +8,8 @@ import {
   deleteVariantImage,
   getVariantImages,
   setVariantImagePrimary,
+  bulkCreateVariantImages,
+  uploadSingleImage,
   getProductById,
   getProductVariantById,
 } from "@/lib/api";
@@ -37,6 +39,12 @@ export default function VariantImagesManager({ productId, variantId }: Props) {
   const [addFile, setAddFile] = useState<File | null>(null);
   const [addPreview, setAddPreview] = useState("");
   const [adding, setAdding] = useState(false);
+
+  // Bulk upload state
+  const bulkFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [bulkFiles, setBulkFiles] = useState<File[]>([]);
+  const [bulkPreviews, setBulkPreviews] = useState<string[]>([]);
+  const [bulkUploading, setBulkUploading] = useState(false);
 
   // Delete confirm
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -101,6 +109,41 @@ export default function VariantImagesManager({ productId, variantId }: Props) {
       toastError(err instanceof Error ? err.message : "Thêm ảnh thất bại");
     } finally {
       setAdding(false);
+    }
+  };
+
+  const handleBulkFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    setBulkFiles((prev) => [...prev, ...files]);
+    setBulkPreviews((prev) => [...prev, ...files.map((f) => URL.createObjectURL(f))]);
+    e.target.value = "";
+  };
+
+  const removeBulkFile = (index: number) => {
+    setBulkFiles((prev) => prev.filter((_, i) => i !== index));
+    setBulkPreviews((prev) => {
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const handleBulkUpload = async () => {
+    if (!bulkFiles.length) return;
+    setBulkUploading(true);
+    try {
+      const uploadResults = await Promise.all(
+        bulkFiles.map((f) => uploadSingleImage(f, "product-variant-images"))
+      );
+      await bulkCreateVariantImages(variantId, uploadResults.map((r) => ({ imageUrl: r.imageUrl })));
+      success(`Đã thêm ${uploadResults.length} ảnh`);
+      setBulkFiles([]);
+      setBulkPreviews([]);
+      await loadData();
+    } catch (err: unknown) {
+      toastError(err instanceof Error ? err.message : "Upload thất bại");
+    } finally {
+      setBulkUploading(false);
     }
   };
 
@@ -339,6 +382,62 @@ export default function VariantImagesManager({ productId, variantId }: Props) {
             <p className="text-xs text-amber-700 dark:text-amber-400">
               Ảnh đầu tiên được tự động đặt làm ảnh chính. Hover vào ảnh để đặt chính hoặc xóa.
             </p>
+          </div>
+
+          {/* Bulk upload panel */}
+          <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+            <h2 className="mb-4 font-semibold text-gray-800 dark:text-white/90">Upload nhiều ảnh</h2>
+
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              ref={bulkFileInputRef}
+              onChange={handleBulkFileSelect}
+            />
+
+            <button
+              type="button"
+              onClick={() => bulkFileInputRef.current?.click()}
+              className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 py-5 text-sm text-gray-500 transition-colors hover:border-brand-400 hover:text-brand-500 dark:border-gray-600 dark:text-gray-400"
+            >
+              <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              <span>Chọn nhiều ảnh cùng lúc</span>
+            </button>
+
+            {bulkPreviews.length > 0 && (
+              <div className="mt-4 space-y-3">
+                <div className="grid grid-cols-3 gap-2">
+                  {bulkPreviews.map((src, i) => (
+                    <div key={i} className="group relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
+                      <img src={src} alt="" className="aspect-square w-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeBulkFile(i)}
+                        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                      >
+                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={bulkUploading}
+                  onClick={handleBulkUpload}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {bulkUploading && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />}
+                  {bulkUploading ? "Đang upload..." : `Upload ${bulkFiles.length} ảnh`}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
