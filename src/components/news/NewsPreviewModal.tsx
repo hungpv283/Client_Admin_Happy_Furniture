@@ -30,18 +30,19 @@ function BlockText({ block }: { block: ContentBlockPayload }) {
   const title = block.titleVi;
   const content = block.contentVi;
   if (!title && !content) return null;
+  const alignClass = block.alignment === "center" ? "text-center" : block.alignment === "right" ? "text-right" : block.alignment === "justify" ? "text-justify" : "text-left";
   return (
-    <div className="mb-6">
+    <div className={`mb-6 ${alignClass}`}>
       {title && (
         <h2
           style={{ fontFamily: "'Playfair Display', 'Cormorant Garamond', serif", color: "#3c4a28" }}
-          className="font-bold text-lg md:text-xl leading-[1.3] tracking-[0.03em] mb-3"
+          className="font-bold text-lg md:text-xl leading-[1.3] tracking-[0.03em] mb-3 inline-block"
         >
           {title}
         </h2>
       )}
       {content && (
-        <div className="prose prose-sm max-w-none text-gray-600 leading-[1.88] text-justify hyphens-auto">
+        <div className={`prose prose-sm max-w-none text-gray-600 leading-[1.88] hyphens-auto mx-auto`}>
           <ReactMarkdown>{content}</ReactMarkdown>
         </div>
       )}
@@ -197,10 +198,115 @@ function BlockImageColumns({ block }: { block: ContentBlockPayload }) {
   );
 }
 
+function BlockText3Columns({ block }: { block: ContentBlockPayload }) {
+  const hasCol1 = block.titleVi || block.contentVi;
+  const hasCol2 = block.title2Vi || block.content2Vi;
+  const hasCol3 = block.title3Vi || block.content3Vi;
+  if (!hasCol1 && !hasCol2 && !hasCol3) return null;
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      {/* Cột 1 */}
+      <div>
+        {block.titleVi && (
+          <h2 style={{ fontFamily: "'Playfair Display', 'Cormorant Garamond', serif", color: "#3c4a28" }} className="font-bold text-lg leading-[1.3] tracking-[0.03em] mb-3 text-center">
+            {block.titleVi}
+          </h2>
+        )}
+        {block.contentVi && (
+          <div className="prose prose-sm max-w-none text-gray-600 leading-[1.88] text-justify hyphens-auto mx-auto">
+            <ReactMarkdown>{block.contentVi}</ReactMarkdown>
+          </div>
+        )}
+      </div>
+      {/* Cột 2 */}
+      <div>
+        {block.title2Vi && (
+          <h2 style={{ fontFamily: "'Playfair Display', 'Cormorant Garamond', serif", color: "#3c4a28" }} className="font-bold text-lg leading-[1.3] tracking-[0.03em] mb-3 text-center">
+            {block.title2Vi}
+          </h2>
+        )}
+        {block.content2Vi && (
+          <div className="prose prose-sm max-w-none text-gray-600 leading-[1.88] text-justify hyphens-auto mx-auto">
+            <ReactMarkdown>{block.content2Vi}</ReactMarkdown>
+          </div>
+        )}
+      </div>
+      {/* Cột 3 */}
+      <div>
+        {block.title3Vi && (
+          <h2 style={{ fontFamily: "'Playfair Display', 'Cormorant Garamond', serif", color: "#3c4a28" }} className="font-bold text-lg leading-[1.3] tracking-[0.03em] mb-3 text-center">
+            {block.title3Vi}
+          </h2>
+        )}
+        {block.content3Vi && (
+          <div className="prose prose-sm max-w-none text-gray-600 leading-[1.88] text-justify hyphens-auto mx-auto">
+            <ReactMarkdown>{block.content3Vi}</ReactMarkdown>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function BlockImage3Columns({ block }: { block: ContentBlockPayload }) {
+  const has1 = block.imageUrl;
+  const has2 = block.image2Url;
+  const has3 = block.image3Url;
+  if (!has1 && !has2 && !has3) return null;
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      {/* Ảnh 1 */}
+      <div>
+        {block.imageUrl ? (
+          <div className="overflow-hidden rounded-sm bg-gray-100">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={block.imageUrl} alt={block.imageAltVi ?? block.titleVi ?? ""} className="w-full h-auto max-h-[360px] object-cover" onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMG; }} />
+          </div>
+        ) : (
+          <div className="h-40 bg-gray-100 rounded flex items-center justify-center">
+            <svg className="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 15l-5-5L5 21" /></svg>
+          </div>
+        )}
+        {block.titleVi && <p className="mt-2 text-xs text-gray-500 text-center italic">{block.titleVi}</p>}
+      </div>
+      {/* Ảnh 2 */}
+      <div>
+        {block.image2Url ? (
+          <div className="overflow-hidden rounded-sm bg-gray-100">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={block.image2Url} alt={block.image2AltVi ?? block.title2Vi ?? ""} className="w-full h-auto max-h-[360px] object-cover" onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMG; }} />
+          </div>
+        ) : (
+          <div className="h-40 bg-gray-100 rounded flex items-center justify-center">
+            <svg className="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 15l-5-5L5 21" /></svg>
+          </div>
+        )}
+        {block.title2Vi && <p className="mt-2 text-xs text-gray-500 text-center italic">{block.title2Vi}</p>}
+      </div>
+      {/* Ảnh 3 */}
+      <div>
+        {block.image3Url ? (
+          <div className="overflow-hidden rounded-sm bg-gray-100">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={block.image3Url} alt={block.image3AltVi ?? block.title3Vi ?? ""} className="w-full h-auto max-h-[360px] object-cover" onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMG; }} />
+          </div>
+        ) : (
+          <div className="h-40 bg-gray-100 rounded flex items-center justify-center">
+            <svg className="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 15l-5-5L5 21" /></svg>
+          </div>
+        )}
+        {block.title3Vi && <p className="mt-2 text-xs text-gray-500 text-center italic">{block.title3Vi}</p>}
+      </div>
+    </div>
+  );
+}
+
 function renderBlock(block: ContentBlockPayload, index: number) {
   if (block.type === "Text") return <BlockText key={index} block={block} />;
   if (block.type === "TextColumns") return <BlockTextColumns key={index} block={block} />;
   if (block.type === "ImageColumns") return <BlockImageColumns key={index} block={block} />;
+  if (block.type === "Text3Columns") return <BlockText3Columns key={index} block={block} />;
+  if (block.type === "Image3Columns") return <BlockImage3Columns key={index} block={block} />;
   if (block.type === "Image") {
     const pos = block.imagePosition ?? "full";
     if (pos === "left") return <BlockImageSide key={index} block={block} reverse={false} />;

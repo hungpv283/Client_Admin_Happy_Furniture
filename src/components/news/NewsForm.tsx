@@ -102,6 +102,30 @@ const BLOCK_TYPE_OPTIONS = [
       </svg>
     ),
   },
+  {
+    value: "Text3Columns",
+    label: "3 cột văn bản",
+    desc: "3 cột văn bản song song",
+    icon: (
+      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2 5h5M2 9h5M2 13h4M2 17h3" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5h6M9 9h6M9 13h5M9 17h4" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17 5h5M17 9h5M17 13h4M17 17h3" />
+      </svg>
+    ),
+  },
+  {
+    value: "Image3Columns",
+    label: "3 ảnh song song",
+    desc: "3 ảnh dàn ngang",
+    icon: (
+      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <rect x="2" y="6" width="5" height="12" rx="1" />
+        <rect x="9" y="6" width="6" height="12" rx="1" />
+        <rect x="17" y="6" width="5" height="12" rx="1" />
+      </svg>
+    ),
+  },
 ];
 
 interface DraggableBlockWrapperProps {
@@ -246,7 +270,7 @@ export default function NewsForm({ mode, newsId }: Props) {
         if (detail.contentBlocks && detail.contentBlocks.length > 0) {
           setContentBlocks(
             detail.contentBlocks.map((cb) => ({
-              type: cb.type as "Text" | "Image" | "TextColumns" | "ImageColumns",
+              type: cb.type as "Text" | "Image" | "TextColumns" | "ImageColumns" | "Text3Columns" | "Image3Columns",
               titleVi: cb.titleVi ?? "",
               titleEn: cb.titleEn ?? "",
               contentVi: cb.contentVi ?? "",
@@ -264,6 +288,14 @@ export default function NewsForm({ mode, newsId }: Props) {
               image2Url: cb.image2Url ?? "",
               image2AltVi: cb.image2AltVi ?? "",
               image2AltEn: cb.image2AltEn ?? "",
+              alignment: (cb.alignment ?? "left") as "left" | "center" | "right" | "justify",
+              title3Vi: cb.title3Vi ?? "",
+              title3En: cb.title3En ?? "",
+              content3Vi: cb.content3Vi ?? "",
+              content3En: cb.content3En ?? "",
+              image3Url: cb.image3Url ?? "",
+              image3AltVi: cb.image3AltVi ?? "",
+              image3AltEn: cb.image3AltEn ?? "",
             }))
           );
         } else {
@@ -291,7 +323,7 @@ export default function NewsForm({ mode, newsId }: Props) {
     }
   };
 
-  const addContentBlock = (blockType: "Text" | "Image" | "TextColumns" | "ImageColumns") => {
+  const addContentBlock = (blockType: "Text" | "Image" | "TextColumns" | "ImageColumns" | "Text3Columns" | "Image3Columns") => {
     setContentBlocks([
       ...contentBlocks,
       {
@@ -313,6 +345,14 @@ export default function NewsForm({ mode, newsId }: Props) {
         image2Url: "",
         image2AltVi: "",
         image2AltEn: "",
+        alignment: "left",
+        title3Vi: "",
+        title3En: "",
+        content3Vi: "",
+        content3En: "",
+        image3Url: "",
+        image3AltVi: "",
+        image3AltEn: "",
       },
     ]);
   };
@@ -352,7 +392,7 @@ export default function NewsForm({ mode, newsId }: Props) {
       if (value === "Image") {
         updated[index].imagePosition = updated[index].imagePosition ?? "full";
         updated[index].isFullWidth = true;
-      } else if (value === "TextColumns" || value === "ImageColumns") {
+      } else if (value === "TextColumns" || value === "ImageColumns" || value === "Text3Columns" || value === "Image3Columns") {
         updated[index].isFullWidth = true;
         updated[index].imagePosition = undefined;
       } else {
@@ -790,6 +830,10 @@ export default function NewsForm({ mode, newsId }: Props) {
                           ? (block.titleVi || block.contentVi?.slice(0, 60) || block.title2Vi || "2 cột văn bản")
                           : block.type === "ImageColumns"
                           ? (block.titleVi || block.title2Vi || "2 ảnh song song")
+                          : block.type === "Text3Columns"
+                          ? (block.titleVi || block.title2Vi || block.title3Vi || "3 cột văn bản")
+                          : block.type === "Image3Columns"
+                          ? (block.titleVi || block.title2Vi || block.title3Vi || "3 ảnh song song")
                           : (block.titleVi || block.contentVi?.slice(0, 80) || "Đoạn văn trống")}
                       </span>
                     </div>
@@ -809,6 +853,30 @@ export default function NewsForm({ mode, newsId }: Props) {
                         <div>
                           <label className={smallLabelCls}>Tiêu đề đoạn (EN)</label>
                           <input type="text" value={block.titleEn ?? ""} onChange={(e) => updateBlock(index, "titleEn", e.target.value)} placeholder="Section title in English (optional)" className={smallInputCls} />
+                        </div>
+                      </div>
+                      <div>
+                        <label className={`${smallLabelCls} mb-2`}>Căn lề chữ</label>
+                        <div className="flex gap-2">
+                          {[
+                            { val: "left", icon: <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h10M4 18h16" /></svg> },
+                            { val: "center", icon: <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M7 12h10M4 18h16" /></svg> },
+                            { val: "right", icon: <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M10 12h10M4 18h16" /></svg> },
+                            { val: "justify", icon: <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg> },
+                          ].map(opt => (
+                            <button
+                              key={opt.val}
+                              type="button"
+                              onClick={() => updateBlock(index, "alignment", opt.val)}
+                              className={`rounded p-1.5 transition-colors ${
+                                (block.alignment ?? "left") === opt.val
+                                  ? "bg-brand-100 text-brand-600 dark:bg-brand-900/30 dark:text-brand-400"
+                                  : "text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700"
+                              }`}
+                            >
+                              {opt.icon}
+                            </button>
+                          ))}
                         </div>
                       </div>
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -969,6 +1037,70 @@ export default function NewsForm({ mode, newsId }: Props) {
                     </div>
                   )}
 
+                  {/* Block content: Text3Columns (3 cột chữ) */}
+                  {block.type === "Text3Columns" && (
+                    <div className="space-y-4 rounded-xl bg-indigo-50 p-4 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-900/30">
+                      <div className="flex items-center gap-2 mb-1">
+                        <svg className="h-4 w-4 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2 5h5M2 9h5M2 13h4M2 17h3" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5h6M9 9h6M9 13h5M9 17h4" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M17 5h5M17 9h5M17 13h4M17 17h3" />
+                        </svg>
+                        <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">Bố cục 3 cột văn bản</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {/* Cột 1 */}
+                        <div className="rounded-lg border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-white/5 p-3">
+                          <p className="text-xs font-semibold text-indigo-500 mb-2 uppercase tracking-wide">Cột 1</p>
+                          <div className="mb-2">
+                            <input type="text" value={block.titleVi ?? ""} onChange={(e) => updateBlock(index, "titleVi", e.target.value)} placeholder="Tiêu đề (VI)" className={smallInputCls} />
+                          </div>
+                          <div className="mb-2">
+                            <input type="text" value={block.titleEn ?? ""} onChange={(e) => updateBlock(index, "titleEn", e.target.value)} placeholder="Tiêu đề (EN)" className={smallInputCls} />
+                          </div>
+                          <div className="mb-2">
+                            <MarkdownEditor label="Nội dung (VI)" value={block.contentVi ?? ""} onChange={(v) => updateBlock(index, "contentVi", v)} placeholder="Nội dung cột 1..." rows={4} />
+                          </div>
+                          <div>
+                            <MarkdownEditor label="Nội dung (EN)" value={block.contentEn ?? ""} onChange={(v) => updateBlock(index, "contentEn", v)} placeholder="Column 1 content..." rows={4} />
+                          </div>
+                        </div>
+                        {/* Cột 2 */}
+                        <div className="rounded-lg border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-white/5 p-3">
+                          <p className="text-xs font-semibold text-indigo-500 mb-2 uppercase tracking-wide">Cột 2</p>
+                          <div className="mb-2">
+                            <input type="text" value={block.title2Vi ?? ""} onChange={(e) => updateBlock(index, "title2Vi", e.target.value)} placeholder="Tiêu đề (VI)" className={smallInputCls} />
+                          </div>
+                          <div className="mb-2">
+                            <input type="text" value={block.title2En ?? ""} onChange={(e) => updateBlock(index, "title2En", e.target.value)} placeholder="Tiêu đề (EN)" className={smallInputCls} />
+                          </div>
+                          <div className="mb-2">
+                            <MarkdownEditor label="Nội dung (VI)" value={block.content2Vi ?? ""} onChange={(v) => updateBlock(index, "content2Vi", v)} placeholder="Nội dung cột 2..." rows={4} />
+                          </div>
+                          <div>
+                            <MarkdownEditor label="Nội dung (EN)" value={block.content2En ?? ""} onChange={(v) => updateBlock(index, "content2En", v)} placeholder="Column 2 content..." rows={4} />
+                          </div>
+                        </div>
+                        {/* Cột 3 */}
+                        <div className="rounded-lg border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-white/5 p-3">
+                          <p className="text-xs font-semibold text-indigo-500 mb-2 uppercase tracking-wide">Cột 3</p>
+                          <div className="mb-2">
+                            <input type="text" value={block.title3Vi ?? ""} onChange={(e) => updateBlock(index, "title3Vi", e.target.value)} placeholder="Tiêu đề (VI)" className={smallInputCls} />
+                          </div>
+                          <div className="mb-2">
+                            <input type="text" value={block.title3En ?? ""} onChange={(e) => updateBlock(index, "title3En", e.target.value)} placeholder="Tiêu đề (EN)" className={smallInputCls} />
+                          </div>
+                          <div className="mb-2">
+                            <MarkdownEditor label="Nội dung (VI)" value={block.content3Vi ?? ""} onChange={(v) => updateBlock(index, "content3Vi", v)} placeholder="Nội dung cột 3..." rows={4} />
+                          </div>
+                          <div>
+                            <MarkdownEditor label="Nội dung (EN)" value={block.content3En ?? ""} onChange={(v) => updateBlock(index, "content3En", v)} placeholder="Column 3 content..." rows={4} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Block content: ImageColumns (ảnh trái / ảnh phải) */}
                   {block.type === "ImageColumns" && (
                     <div className="space-y-4 rounded-xl bg-teal-50 p-4 dark:bg-teal-900/10 border border-teal-100 dark:border-teal-900/30">
@@ -1026,6 +1158,49 @@ export default function NewsForm({ mode, newsId }: Props) {
                           <div>
                             <label className={smallLabelCls}>Chú thích ảnh phải (EN)</label>
                             <input type="text" value={block.title2En ?? ""} onChange={(e) => updateBlock(index, "title2En", e.target.value)} placeholder="Right image caption" className={smallInputCls} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Block content: Image3Columns (3 ảnh song song) */}
+                  {block.type === "Image3Columns" && (
+                    <div className="space-y-4 rounded-xl bg-emerald-50 p-4 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/30">
+                      <div className="flex items-center gap-2 mb-1">
+                        <svg className="h-4 w-4 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                          <rect x="2" y="6" width="5" height="12" rx="1" />
+                          <rect x="9" y="6" width="6" height="12" rx="1" />
+                          <rect x="17" y="6" width="5" height="12" rx="1" />
+                        </svg>
+                        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Bố cục 3 ảnh song song</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {/* Ảnh 1 */}
+                        <div className="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-white dark:bg-white/5 p-3">
+                          <p className="text-xs font-semibold text-emerald-500 mb-2 uppercase tracking-wide">Ảnh 1</p>
+                          <ImageUploadField label="Ảnh 1" value={block.imageUrl ?? ""} onChange={(url) => updateBlock(index, "imageUrl", url)} placeholder="URL ảnh" previewMaxHeight={200} folder="news" enableCrop />
+                          <div className="mt-2 space-y-2">
+                            <input type="text" value={block.titleVi ?? ""} onChange={(e) => updateBlock(index, "titleVi", e.target.value)} placeholder="Chú thích (VI)" className={smallInputCls} />
+                            <input type="text" value={block.titleEn ?? ""} onChange={(e) => updateBlock(index, "titleEn", e.target.value)} placeholder="Chú thích (EN)" className={smallInputCls} />
+                          </div>
+                        </div>
+                        {/* Ảnh 2 */}
+                        <div className="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-white dark:bg-white/5 p-3">
+                          <p className="text-xs font-semibold text-emerald-500 mb-2 uppercase tracking-wide">Ảnh 2</p>
+                          <ImageUploadField label="Ảnh 2" value={block.image2Url ?? ""} onChange={(url) => updateBlock(index, "image2Url", url)} placeholder="URL ảnh" previewMaxHeight={200} folder="news" enableCrop />
+                          <div className="mt-2 space-y-2">
+                            <input type="text" value={block.title2Vi ?? ""} onChange={(e) => updateBlock(index, "title2Vi", e.target.value)} placeholder="Chú thích (VI)" className={smallInputCls} />
+                            <input type="text" value={block.title2En ?? ""} onChange={(e) => updateBlock(index, "title2En", e.target.value)} placeholder="Chú thích (EN)" className={smallInputCls} />
+                          </div>
+                        </div>
+                        {/* Ảnh 3 */}
+                        <div className="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-white dark:bg-white/5 p-3">
+                          <p className="text-xs font-semibold text-emerald-500 mb-2 uppercase tracking-wide">Ảnh 3</p>
+                          <ImageUploadField label="Ảnh 3" value={block.image3Url ?? ""} onChange={(url) => updateBlock(index, "image3Url", url)} placeholder="URL ảnh" previewMaxHeight={200} folder="news" enableCrop />
+                          <div className="mt-2 space-y-2">
+                            <input type="text" value={block.title3Vi ?? ""} onChange={(e) => updateBlock(index, "title3Vi", e.target.value)} placeholder="Chú thích (VI)" className={smallInputCls} />
+                            <input type="text" value={block.title3En ?? ""} onChange={(e) => updateBlock(index, "title3En", e.target.value)} placeholder="Chú thích (EN)" className={smallInputCls} />
                           </div>
                         </div>
                       </div>
@@ -1110,6 +1285,42 @@ export default function NewsForm({ mode, newsId }: Props) {
                               )}
                             </div>
                             {block.title2Vi && <p className="mt-0.5 text-[10px] text-gray-500 truncate">{block.title2Vi}</p>}
+                          </div>
+                        </div>
+                      ) : block.type === "Text3Columns" ? (
+                        <div className="flex gap-2 text-center">
+                          <div className="flex-1 border-r border-gray-100 dark:border-gray-700 px-1">
+                            {block.titleVi && <p className="mb-0.5 text-xs font-semibold text-gray-700 truncate">{block.titleVi}</p>}
+                            {block.contentVi ? <p className="text-[10px] text-gray-500 line-clamp-2">{block.contentVi}</p> : <p className="text-[10px] italic text-gray-300">Cột 1</p>}
+                          </div>
+                          <div className="flex-1 border-r border-gray-100 dark:border-gray-700 px-1">
+                            {block.title2Vi && <p className="mb-0.5 text-xs font-semibold text-gray-700 truncate">{block.title2Vi}</p>}
+                            {block.content2Vi ? <p className="text-[10px] text-gray-500 line-clamp-2">{block.content2Vi}</p> : <p className="text-[10px] italic text-gray-300">Cột 2</p>}
+                          </div>
+                          <div className="flex-1 px-1">
+                            {block.title3Vi && <p className="mb-0.5 text-xs font-semibold text-gray-700 truncate">{block.title3Vi}</p>}
+                            {block.content3Vi ? <p className="text-[10px] text-gray-500 line-clamp-2">{block.content3Vi}</p> : <p className="text-[10px] italic text-gray-300">Cột 3</p>}
+                          </div>
+                        </div>
+                      ) : block.type === "Image3Columns" ? (
+                        <div className="flex gap-2">
+                          <div className="flex-1">
+                            <div className="h-10 w-full overflow-hidden rounded bg-gray-100 dark:bg-white/10 flex items-center justify-center">
+                              {block.imageUrl ? <Image src={block.imageUrl} alt="preview1" width={80} height={40} className="h-full w-full object-cover" unoptimized /> : <svg className="h-4 w-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 15l-5-5L5 21" /></svg>}
+                            </div>
+                            {block.titleVi && <p className="mt-0.5 text-[9px] text-gray-500 truncate text-center">{block.titleVi}</p>}
+                          </div>
+                          <div className="flex-1">
+                            <div className="h-10 w-full overflow-hidden rounded bg-gray-100 dark:bg-white/10 flex items-center justify-center">
+                              {block.image2Url ? <Image src={block.image2Url} alt="preview2" width={80} height={40} className="h-full w-full object-cover" unoptimized /> : <svg className="h-4 w-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 15l-5-5L5 21" /></svg>}
+                            </div>
+                            {block.title2Vi && <p className="mt-0.5 text-[9px] text-gray-500 truncate text-center">{block.title2Vi}</p>}
+                          </div>
+                          <div className="flex-1">
+                            <div className="h-10 w-full overflow-hidden rounded bg-gray-100 dark:bg-white/10 flex items-center justify-center">
+                              {block.image3Url ? <Image src={block.image3Url} alt="preview3" width={80} height={40} className="h-full w-full object-cover" unoptimized /> : <svg className="h-4 w-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 15l-5-5L5 21" /></svg>}
+                            </div>
+                            {block.title3Vi && <p className="mt-0.5 text-[9px] text-gray-500 truncate text-center">{block.title3Vi}</p>}
                           </div>
                         </div>
                       ) : (
