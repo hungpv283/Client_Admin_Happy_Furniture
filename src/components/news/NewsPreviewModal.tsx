@@ -101,8 +101,106 @@ function BlockImageSide({ block, reverse }: { block: ContentBlockPayload; revers
   );
 }
 
+function BlockTextColumns({ block }: { block: ContentBlockPayload }) {
+  const hasLeft = block.titleVi || block.contentVi;
+  const hasRight = block.title2Vi || block.content2Vi;
+  if (!hasLeft && !hasRight) return null;
+  return (
+    <div className="flex flex-col sm:flex-row gap-6 mb-6">
+      {/* Cột trái */}
+      <div className="flex-1">
+        {block.titleVi && (
+          <h2
+            style={{ fontFamily: "'Playfair Display', 'Cormorant Garamond', serif", color: "#3c4a28" }}
+            className="font-bold text-lg leading-[1.3] tracking-[0.03em] mb-3"
+          >
+            {block.titleVi}
+          </h2>
+        )}
+        {block.contentVi && (
+          <div className="prose prose-sm max-w-none text-gray-600 leading-[1.88] text-justify hyphens-auto">
+            <ReactMarkdown>{block.contentVi}</ReactMarkdown>
+          </div>
+        )}
+      </div>
+      {/* Đường kẻ giữa */}
+      <div className="hidden sm:block w-px bg-gray-200 self-stretch" />
+      {/* Cột phải */}
+      <div className="flex-1">
+        {block.title2Vi && (
+          <h2
+            style={{ fontFamily: "'Playfair Display', 'Cormorant Garamond', serif", color: "#3c4a28" }}
+            className="font-bold text-lg leading-[1.3] tracking-[0.03em] mb-3"
+          >
+            {block.title2Vi}
+          </h2>
+        )}
+        {block.content2Vi && (
+          <div className="prose prose-sm max-w-none text-gray-600 leading-[1.88] text-justify hyphens-auto">
+            <ReactMarkdown>{block.content2Vi}</ReactMarkdown>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function BlockImageColumns({ block }: { block: ContentBlockPayload }) {
+  const hasLeft = block.imageUrl;
+  const hasRight = block.image2Url;
+  if (!hasLeft && !hasRight) return null;
+  return (
+    <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      {/* Ảnh trái */}
+      <div className="flex-1">
+        {block.imageUrl ? (
+          <div className="overflow-hidden rounded-sm bg-gray-100">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={block.imageUrl}
+              alt={block.imageAltVi ?? block.titleVi ?? ""}
+              className="w-full h-auto max-h-[360px] object-cover"
+              onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMG; }}
+            />
+          </div>
+        ) : (
+          <div className="h-40 bg-gray-100 rounded flex items-center justify-center">
+            <svg className="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 15l-5-5L5 21" /></svg>
+          </div>
+        )}
+        {block.titleVi && (
+          <p className="mt-2 text-xs text-gray-500 text-center italic">{block.titleVi}</p>
+        )}
+      </div>
+      {/* Ảnh phải */}
+      <div className="flex-1">
+        {block.image2Url ? (
+          <div className="overflow-hidden rounded-sm bg-gray-100">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={block.image2Url}
+              alt={block.image2AltVi ?? block.title2Vi ?? ""}
+              className="w-full h-auto max-h-[360px] object-cover"
+              onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMG; }}
+            />
+          </div>
+        ) : (
+          <div className="h-40 bg-gray-100 rounded flex items-center justify-center">
+            <svg className="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 15l-5-5L5 21" /></svg>
+          </div>
+        )}
+        {block.title2Vi && (
+          <p className="mt-2 text-xs text-gray-500 text-center italic">{block.title2Vi}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function renderBlock(block: ContentBlockPayload, index: number) {
   if (block.type === "Text") return <BlockText key={index} block={block} />;
+  if (block.type === "TextColumns") return <BlockTextColumns key={index} block={block} />;
+  if (block.type === "ImageColumns") return <BlockImageColumns key={index} block={block} />;
   if (block.type === "Image") {
     const pos = block.imagePosition ?? "full";
     if (pos === "left") return <BlockImageSide key={index} block={block} reverse={false} />;

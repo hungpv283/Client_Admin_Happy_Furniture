@@ -79,6 +79,29 @@ const BLOCK_TYPE_OPTIONS = [
       </svg>
     ),
   },
+  {
+    value: "TextColumns",
+    label: "Chữ trái / Chữ phải",
+    desc: "2 cột văn bản song song",
+    icon: (
+      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 5h7M3 9h7M3 13h5M3 17h4" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M14 5h7M14 9h7M14 13h5M14 17h4" />
+        <path d="M12 3v18" strokeDasharray="2 2" />
+      </svg>
+    ),
+  },
+  {
+    value: "ImageColumns",
+    label: "Ảnh trái / Ảnh phải",
+    desc: "2 ảnh song song",
+    icon: (
+      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <rect x="2" y="4" width="9" height="16" rx="1" />
+        <rect x="13" y="4" width="9" height="16" rx="1" />
+      </svg>
+    ),
+  },
 ];
 
 interface DraggableBlockWrapperProps {
@@ -223,7 +246,7 @@ export default function NewsForm({ mode, newsId }: Props) {
         if (detail.contentBlocks && detail.contentBlocks.length > 0) {
           setContentBlocks(
             detail.contentBlocks.map((cb) => ({
-              type: cb.type as "Text" | "Image",
+              type: cb.type as "Text" | "Image" | "TextColumns" | "ImageColumns",
               titleVi: cb.titleVi ?? "",
               titleEn: cb.titleEn ?? "",
               contentVi: cb.contentVi ?? "",
@@ -234,6 +257,13 @@ export default function NewsForm({ mode, newsId }: Props) {
               imagePosition: (cb.imagePosition ?? "full") as "full" | "left" | "right",
               sortOrder: cb.sortOrder,
               isFullWidth: cb.isFullWidth,
+              title2Vi: cb.title2Vi ?? "",
+              title2En: cb.title2En ?? "",
+              content2Vi: cb.content2Vi ?? "",
+              content2En: cb.content2En ?? "",
+              image2Url: cb.image2Url ?? "",
+              image2AltVi: cb.image2AltVi ?? "",
+              image2AltEn: cb.image2AltEn ?? "",
             }))
           );
         } else {
@@ -261,7 +291,7 @@ export default function NewsForm({ mode, newsId }: Props) {
     }
   };
 
-  const addContentBlock = (blockType: "Text" | "Image") => {
+  const addContentBlock = (blockType: "Text" | "Image" | "TextColumns" | "ImageColumns") => {
     setContentBlocks([
       ...contentBlocks,
       {
@@ -275,7 +305,14 @@ export default function NewsForm({ mode, newsId }: Props) {
         imageAltEn: "",
         imagePosition: blockType === "Image" ? "full" : undefined,
         sortOrder: contentBlocks.length,
-        isFullWidth: blockType === "Image",
+        isFullWidth: blockType === "Image" || blockType === "TextColumns" || blockType === "ImageColumns",
+        title2Vi: "",
+        title2En: "",
+        content2Vi: "",
+        content2En: "",
+        image2Url: "",
+        image2AltVi: "",
+        image2AltEn: "",
       },
     ]);
   };
@@ -315,6 +352,12 @@ export default function NewsForm({ mode, newsId }: Props) {
       if (value === "Image") {
         updated[index].imagePosition = updated[index].imagePosition ?? "full";
         updated[index].isFullWidth = true;
+      } else if (value === "TextColumns" || value === "ImageColumns") {
+        updated[index].isFullWidth = true;
+        updated[index].imagePosition = undefined;
+      } else {
+        updated[index].isFullWidth = false;
+        updated[index].imagePosition = undefined;
       }
     }
     if (field === "imagePosition") {
@@ -382,6 +425,10 @@ export default function NewsForm({ mode, newsId }: Props) {
   const pendingDeleteLabel =
     pendingDeleteBlock?.type === "Image"
       ? `Ảnh${pendingDeleteBlock.titleVi ? ` — ${pendingDeleteBlock.titleVi}` : ""}`
+      : pendingDeleteBlock?.type === "TextColumns"
+      ? `2 cột văn bản${pendingDeleteBlock.titleVi ? ` — ${pendingDeleteBlock.titleVi}` : ""}`
+      : pendingDeleteBlock?.type === "ImageColumns"
+      ? `2 ảnh song song${pendingDeleteBlock.titleVi ? ` — ${pendingDeleteBlock.titleVi}` : ""}`
       : `Văn bản${pendingDeleteBlock?.titleVi ? ` — ${pendingDeleteBlock.titleVi}` : ""}`;
 
   return (
@@ -718,9 +765,18 @@ export default function NewsForm({ mode, newsId }: Props) {
                   {/* Preview khi block đang collapsed */}
                   {collapsedBlocks.has(index) && (
                     <div className="mt-1 flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 dark:bg-white/[0.02]">
-                      {block.type === "Image" && block.imageUrl ? (
-                        <div className="h-8 w-12 shrink-0 overflow-hidden rounded bg-gray-200">
-                          <img src={block.imageUrl} alt="" className="h-full w-full object-cover" />
+                      {(block.type === "Image" || block.type === "ImageColumns") && (block.imageUrl || block.image2Url) ? (
+                        <div className="flex gap-1">
+                          {block.imageUrl && (
+                            <div className="h-8 w-12 shrink-0 overflow-hidden rounded bg-gray-200">
+                              <img src={block.imageUrl} alt="" className="h-full w-full object-cover" />
+                            </div>
+                          )}
+                          {block.image2Url && (
+                            <div className="h-8 w-12 shrink-0 overflow-hidden rounded bg-gray-200">
+                              <img src={block.image2Url} alt="" className="h-full w-full object-cover" />
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <svg className="h-4 w-4 shrink-0 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -728,7 +784,13 @@ export default function NewsForm({ mode, newsId }: Props) {
                         </svg>
                       )}
                       <span className="truncate text-xs text-gray-500 dark:text-gray-400">
-                        {block.titleVi || block.contentVi?.slice(0, 80) || block.imageAltVi || (block.type === "Image" ? "Ảnh chưa có tiêu đề" : "Đoạn văn trống")}
+                        {block.type === "Image"
+                          ? (block.titleVi || block.imageAltVi || "Ảnh chưa có tiêu đề")
+                          : block.type === "TextColumns"
+                          ? (block.titleVi || block.contentVi?.slice(0, 60) || block.title2Vi || "2 cột văn bản")
+                          : block.type === "ImageColumns"
+                          ? (block.titleVi || block.title2Vi || "2 ảnh song song")
+                          : (block.titleVi || block.contentVi?.slice(0, 80) || "Đoạn văn trống")}
                       </span>
                     </div>
                   )}
@@ -857,6 +919,119 @@ export default function NewsForm({ mode, newsId }: Props) {
                     </div>
                   )}
 
+                  {/* Block content: TextColumns (chữ trái / chữ phải) */}
+                  {block.type === "TextColumns" && (
+                    <div className="space-y-4 rounded-xl bg-purple-50 p-4 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-900/30">
+                      <div className="flex items-center gap-2 mb-1">
+                        <svg className="h-4 w-4 text-purple-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 5h7M3 9h7M3 13h5M3 17h4" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M14 5h7M14 9h7M14 13h5M14 17h4" />
+                          <path d="M12 3v18" strokeDasharray="2 2" />
+                        </svg>
+                        <span className="text-xs font-semibold text-purple-600 dark:text-purple-400">Bố cục 2 cột văn bản song song</span>
+                      </div>
+                      {/* Cột trái */}
+                      <div className="rounded-lg border border-purple-200 dark:border-purple-800 bg-white dark:bg-white/5 p-3">
+                        <p className="text-xs font-semibold text-purple-500 mb-2 uppercase tracking-wide">◀ Cột trái</p>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 mb-2">
+                          <div>
+                            <label className={smallLabelCls}>Tiêu đề cột trái (VI)</label>
+                            <input type="text" value={block.titleVi ?? ""} onChange={(e) => updateBlock(index, "titleVi", e.target.value)} placeholder="Tiêu đề cột trái" className={smallInputCls} />
+                          </div>
+                          <div>
+                            <label className={smallLabelCls}>Tiêu đề cột trái (EN)</label>
+                            <input type="text" value={block.titleEn ?? ""} onChange={(e) => updateBlock(index, "titleEn", e.target.value)} placeholder="Left column title" className={smallInputCls} />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          <MarkdownEditor label="Nội dung cột trái (VI)" value={block.contentVi ?? ""} onChange={(v) => updateBlock(index, "contentVi", v)} placeholder="Viết nội dung cột trái..." rows={6} />
+                          <MarkdownEditor label="Nội dung cột trái (EN)" value={block.contentEn ?? ""} onChange={(v) => updateBlock(index, "contentEn", v)} placeholder="Left column content..." rows={6} />
+                        </div>
+                      </div>
+                      {/* Cột phải */}
+                      <div className="rounded-lg border border-purple-200 dark:border-purple-800 bg-white dark:bg-white/5 p-3">
+                        <p className="text-xs font-semibold text-purple-500 mb-2 uppercase tracking-wide">Cột phải ▶</p>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 mb-2">
+                          <div>
+                            <label className={smallLabelCls}>Tiêu đề cột phải (VI)</label>
+                            <input type="text" value={block.title2Vi ?? ""} onChange={(e) => updateBlock(index, "title2Vi", e.target.value)} placeholder="Tiêu đề cột phải" className={smallInputCls} />
+                          </div>
+                          <div>
+                            <label className={smallLabelCls}>Tiêu đề cột phải (EN)</label>
+                            <input type="text" value={block.title2En ?? ""} onChange={(e) => updateBlock(index, "title2En", e.target.value)} placeholder="Right column title" className={smallInputCls} />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          <MarkdownEditor label="Nội dung cột phải (VI)" value={block.content2Vi ?? ""} onChange={(v) => updateBlock(index, "content2Vi", v)} placeholder="Viết nội dung cột phải..." rows={6} />
+                          <MarkdownEditor label="Nội dung cột phải (EN)" value={block.content2En ?? ""} onChange={(v) => updateBlock(index, "content2En", v)} placeholder="Right column content..." rows={6} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Block content: ImageColumns (ảnh trái / ảnh phải) */}
+                  {block.type === "ImageColumns" && (
+                    <div className="space-y-4 rounded-xl bg-teal-50 p-4 dark:bg-teal-900/10 border border-teal-100 dark:border-teal-900/30">
+                      <div className="flex items-center gap-2 mb-1">
+                        <svg className="h-4 w-4 text-teal-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                          <rect x="2" y="4" width="9" height="16" rx="1" />
+                          <rect x="13" y="4" width="9" height="16" rx="1" />
+                        </svg>
+                        <span className="text-xs font-semibold text-teal-600 dark:text-teal-400">Bố cục 2 ảnh song song</span>
+                      </div>
+                      {/* Ảnh trái */}
+                      <div className="rounded-lg border border-teal-200 dark:border-teal-800 bg-white dark:bg-white/5 p-3">
+                        <p className="text-xs font-semibold text-teal-500 mb-2 uppercase tracking-wide">◀ Ảnh trái</p>
+                        <ImageUploadField label="Ảnh trái" value={block.imageUrl ?? ""} onChange={(url) => updateBlock(index, "imageUrl", url)} placeholder="https://example.com/image-left.jpg" previewMaxHeight={280} folder="news" enableCrop />
+                        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          <div>
+                            <label className={smallLabelCls}>Alt text ảnh trái (VI)</label>
+                            <input type="text" value={block.imageAltVi ?? ""} onChange={(e) => updateBlock(index, "imageAltVi", e.target.value)} placeholder="Mô tả ảnh trái (SEO)" className={smallInputCls} />
+                          </div>
+                          <div>
+                            <label className={smallLabelCls}>Alt text ảnh trái (EN)</label>
+                            <input type="text" value={block.imageAltEn ?? ""} onChange={(e) => updateBlock(index, "imageAltEn", e.target.value)} placeholder="Left image alt (SEO)" className={smallInputCls} />
+                          </div>
+                        </div>
+                        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          <div>
+                            <label className={smallLabelCls}>Chú thích ảnh trái (VI)</label>
+                            <input type="text" value={block.titleVi ?? ""} onChange={(e) => updateBlock(index, "titleVi", e.target.value)} placeholder="Chú thích ảnh trái" className={smallInputCls} />
+                          </div>
+                          <div>
+                            <label className={smallLabelCls}>Chú thích ảnh trái (EN)</label>
+                            <input type="text" value={block.titleEn ?? ""} onChange={(e) => updateBlock(index, "titleEn", e.target.value)} placeholder="Left image caption" className={smallInputCls} />
+                          </div>
+                        </div>
+                      </div>
+                      {/* Ảnh phải */}
+                      <div className="rounded-lg border border-teal-200 dark:border-teal-800 bg-white dark:bg-white/5 p-3">
+                        <p className="text-xs font-semibold text-teal-500 mb-2 uppercase tracking-wide">Ảnh phải ▶</p>
+                        <ImageUploadField label="Ảnh phải" value={block.image2Url ?? ""} onChange={(url) => updateBlock(index, "image2Url", url)} placeholder="https://example.com/image-right.jpg" previewMaxHeight={280} folder="news" enableCrop />
+                        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          <div>
+                            <label className={smallLabelCls}>Alt text ảnh phải (VI)</label>
+                            <input type="text" value={block.image2AltVi ?? ""} onChange={(e) => updateBlock(index, "image2AltVi", e.target.value)} placeholder="Mô tả ảnh phải (SEO)" className={smallInputCls} />
+                          </div>
+                          <div>
+                            <label className={smallLabelCls}>Alt text ảnh phải (EN)</label>
+                            <input type="text" value={block.image2AltEn ?? ""} onChange={(e) => updateBlock(index, "image2AltEn", e.target.value)} placeholder="Right image alt (SEO)" className={smallInputCls} />
+                          </div>
+                        </div>
+                        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          <div>
+                            <label className={smallLabelCls}>Chú thích ảnh phải (VI)</label>
+                            <input type="text" value={block.title2Vi ?? ""} onChange={(e) => updateBlock(index, "title2Vi", e.target.value)} placeholder="Chú thích ảnh phải" className={smallInputCls} />
+                          </div>
+                          <div>
+                            <label className={smallLabelCls}>Chú thích ảnh phải (EN)</label>
+                            <input type="text" value={block.title2En ?? ""} onChange={(e) => updateBlock(index, "title2En", e.target.value)} placeholder="Right image caption" className={smallInputCls} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   </div>{/* end collapse wrapper */}
                 </div>
                   )}
@@ -890,6 +1065,52 @@ export default function NewsForm({ mode, newsId }: Props) {
                           ) : (
                             <p className="text-xs italic text-gray-300">Đoạn văn trống...</p>
                           )}
+                        </div>
+                      ) : block.type === "TextColumns" ? (
+                        <div className="flex gap-3">
+                          <div className="flex-1 border-r border-gray-100 dark:border-gray-700 pr-3">
+                            <p className="text-[10px] font-bold text-purple-400 uppercase mb-0.5">Cột trái</p>
+                            {block.titleVi && <p className="mb-0.5 text-xs font-semibold text-gray-700 dark:text-gray-300">{block.titleVi}</p>}
+                            {block.contentVi ? (
+                              <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">{block.contentVi}</p>
+                            ) : (
+                              <p className="text-xs italic text-gray-300">Cột trái trống...</p>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-[10px] font-bold text-purple-400 uppercase mb-0.5">Cột phải</p>
+                            {block.title2Vi && <p className="mb-0.5 text-xs font-semibold text-gray-700 dark:text-gray-300">{block.title2Vi}</p>}
+                            {block.content2Vi ? (
+                              <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">{block.content2Vi}</p>
+                            ) : (
+                              <p className="text-xs italic text-gray-300">Cột phải trống...</p>
+                            )}
+                          </div>
+                        </div>
+                      ) : block.type === "ImageColumns" ? (
+                        <div className="flex gap-3">
+                          <div className="flex-1">
+                            <p className="text-[10px] font-bold text-teal-400 uppercase mb-1">Ảnh trái</p>
+                            <div className="h-12 w-full overflow-hidden rounded bg-gray-100 dark:bg-white/10 flex items-center justify-center">
+                              {block.imageUrl ? (
+                                <Image src={block.imageUrl} alt="preview-left" width={96} height={48} className="h-full w-full object-cover" unoptimized />
+                              ) : (
+                                <svg className="h-4 w-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 15l-5-5L5 21" /></svg>
+                              )}
+                            </div>
+                            {block.titleVi && <p className="mt-0.5 text-[10px] text-gray-500 truncate">{block.titleVi}</p>}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-[10px] font-bold text-teal-400 uppercase mb-1">Ảnh phải</p>
+                            <div className="h-12 w-full overflow-hidden rounded bg-gray-100 dark:bg-white/10 flex items-center justify-center">
+                              {block.image2Url ? (
+                                <Image src={block.image2Url} alt="preview-right" width={96} height={48} className="h-full w-full object-cover" unoptimized />
+                              ) : (
+                                <svg className="h-4 w-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 15l-5-5L5 21" /></svg>
+                              )}
+                            </div>
+                            {block.title2Vi && <p className="mt-0.5 text-[10px] text-gray-500 truncate">{block.title2Vi}</p>}
+                          </div>
                         </div>
                       ) : (
                         <div

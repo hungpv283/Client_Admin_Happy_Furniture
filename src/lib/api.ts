@@ -916,7 +916,7 @@ export async function getActiveAssemblies(): Promise<Assembly[]> {
 export interface ContentBlock {
   id: number;
   newsId: number;
-  type: "Text" | "Image";
+  type: "Text" | "Image" | "TextColumns" | "ImageColumns";
   titleVi: string | null;
   titleEn: string | null;
   contentVi: string | null;
@@ -928,6 +928,15 @@ export interface ContentBlock {
   imagePosition: "full" | "left" | "right" | null;
   sortOrder: number;
   isFullWidth: boolean;
+  // TextColumns: cột phải
+  title2Vi: string | null;
+  title2En: string | null;
+  content2Vi: string | null;
+  content2En: string | null;
+  // ImageColumns: ảnh phải
+  image2Url: string | null;
+  image2AltVi: string | null;
+  image2AltEn: string | null;
 }
 
 export interface News {
@@ -966,7 +975,7 @@ export interface NewsFilters {
 }
 
 export interface ContentBlockPayload {
-  type: "Text" | "Image";
+  type: "Text" | "Image" | "TextColumns" | "ImageColumns";
   titleVi?: string;
   titleEn?: string;
   contentVi?: string;
@@ -978,6 +987,15 @@ export interface ContentBlockPayload {
   imagePosition?: "full" | "left" | "right";
   sortOrder: number;
   isFullWidth: boolean;
+  // TextColumns: cột phải
+  title2Vi?: string;
+  title2En?: string;
+  content2Vi?: string;
+  content2En?: string;
+  // ImageColumns: ảnh phải
+  image2Url?: string;
+  image2AltVi?: string;
+  image2AltEn?: string;
 }
 
 export interface NewsPayload {
