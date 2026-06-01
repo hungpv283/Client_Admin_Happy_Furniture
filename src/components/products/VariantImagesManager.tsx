@@ -132,9 +132,11 @@ export default function VariantImagesManager({ productId, variantId }: Props) {
     if (!bulkFiles.length) return;
     setBulkUploading(true);
     try {
-      const uploadResults = await Promise.all(
-        bulkFiles.map((f) => uploadSingleImage(f, "product-images"))
-      );
+      const uploadResults = [];
+      for (const f of bulkFiles) {
+        const result = await uploadSingleImage(f, "product-images");
+        uploadResults.push(result);
+      }
       await bulkCreateVariantImages(variantId, uploadResults.map((r) => ({ imageUrl: r.imageUrl })));
       success(`Đã thêm ${uploadResults.length} ảnh`);
       setBulkFiles([]);
