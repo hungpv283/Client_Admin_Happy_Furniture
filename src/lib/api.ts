@@ -1,3 +1,5 @@
+import imageCompression from "browser-image-compression";
+
 const BASE_URL = "https://happyfurniture-huexcrecemgaesdy.southeastasia-01.azurewebsites.net/api";
 
 // const BASE_URL = "http://localhost:5238/api"
@@ -410,14 +412,23 @@ export interface UploadImageResult {
 
 /**
  * Upload một ảnh lên Cloudinary.
+ * Tự động compress xuống < 9MB nếu file quá lớn (giới hạn Cloudinary free plan).
  * folder: "products" | "categories" | "product-variants" | "product-images" | "news"
  */
 export async function uploadSingleImage(
   file: File,
   folder: string = "news"
 ): Promise<UploadImageResult> {
+  let fileToUpload = file;
+  if (file.size > 9 * 1024 * 1024) {
+    fileToUpload = await imageCompression(file, {
+      maxSizeMB: 9,
+      maxWidthOrHeight: 3840,
+      useWebWorker: true,
+    });
+  }
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append("file", fileToUpload);
   return requestMultipart<UploadImageResult>(`/Upload/image?folder=${encodeURIComponent(folder)}`, formData);
 }
 
