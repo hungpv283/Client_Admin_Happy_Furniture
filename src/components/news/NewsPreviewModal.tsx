@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
-import ReactMarkdown from "react-markdown";
 import type { ContentBlockPayload } from "@/lib/api";
+import RichTextContent from "@/components/news/RichTextContent";
 
 interface PreviewData {
   titleVi: string;
@@ -42,9 +42,10 @@ function BlockText({ block }: { block: ContentBlockPayload }) {
         </h2>
       )}
       {content && (
-        <div className={`prose prose-sm max-w-none text-gray-600 leading-[1.88] hyphens-auto mx-auto`}>
-          <ReactMarkdown>{content}</ReactMarkdown>
-        </div>
+        <RichTextContent
+          content={content}
+          className="prose prose-sm max-w-none text-gray-600 leading-[1.88] hyphens-auto mx-auto"
+        />
       )}
     </div>
   );
@@ -92,9 +93,10 @@ function BlockImageSide({ block, reverse }: { block: ContentBlockPayload; revers
             </h2>
           )}
           {content && (
-            <div className="prose prose-sm max-w-none text-gray-600 leading-[1.88] text-justify hyphens-auto">
-              <ReactMarkdown>{content}</ReactMarkdown>
-            </div>
+            <RichTextContent
+              content={content}
+              className="prose prose-sm max-w-none text-gray-600 leading-[1.88] text-justify hyphens-auto"
+            />
           )}
         </div>
       )}
@@ -119,9 +121,10 @@ function BlockTextColumns({ block }: { block: ContentBlockPayload }) {
           </h2>
         )}
         {block.contentVi && (
-          <div className="prose prose-sm max-w-none text-gray-600 leading-[1.88] text-justify hyphens-auto">
-            <ReactMarkdown>{block.contentVi}</ReactMarkdown>
-          </div>
+          <RichTextContent
+            content={block.contentVi}
+            className="prose prose-sm max-w-none text-gray-600 leading-[1.88] text-justify hyphens-auto"
+          />
         )}
       </div>
       {/* Đường kẻ giữa */}
@@ -137,9 +140,10 @@ function BlockTextColumns({ block }: { block: ContentBlockPayload }) {
           </h2>
         )}
         {block.content2Vi && (
-          <div className="prose prose-sm max-w-none text-gray-600 leading-[1.88] text-justify hyphens-auto">
-            <ReactMarkdown>{block.content2Vi}</ReactMarkdown>
-          </div>
+          <RichTextContent
+            content={block.content2Vi}
+            className="prose prose-sm max-w-none text-gray-600 leading-[1.88] text-justify hyphens-auto"
+          />
         )}
       </div>
     </div>
@@ -213,9 +217,10 @@ function BlockText3Columns({ block }: { block: ContentBlockPayload }) {
           </h2>
         )}
         {block.contentVi && (
-          <div className="prose prose-sm max-w-none text-gray-600 leading-[1.88] text-justify hyphens-auto mx-auto">
-            <ReactMarkdown>{block.contentVi}</ReactMarkdown>
-          </div>
+          <RichTextContent
+            content={block.contentVi}
+            className="prose prose-sm max-w-none text-gray-600 leading-[1.88] text-justify hyphens-auto mx-auto"
+          />
         )}
       </div>
       {/* Cột 2 */}
@@ -226,9 +231,10 @@ function BlockText3Columns({ block }: { block: ContentBlockPayload }) {
           </h2>
         )}
         {block.content2Vi && (
-          <div className="prose prose-sm max-w-none text-gray-600 leading-[1.88] text-justify hyphens-auto mx-auto">
-            <ReactMarkdown>{block.content2Vi}</ReactMarkdown>
-          </div>
+          <RichTextContent
+            content={block.content2Vi}
+            className="prose prose-sm max-w-none text-gray-600 leading-[1.88] text-justify hyphens-auto mx-auto"
+          />
         )}
       </div>
       {/* Cột 3 */}
@@ -239,9 +245,10 @@ function BlockText3Columns({ block }: { block: ContentBlockPayload }) {
           </h2>
         )}
         {block.content3Vi && (
-          <div className="prose prose-sm max-w-none text-gray-600 leading-[1.88] text-justify hyphens-auto mx-auto">
-            <ReactMarkdown>{block.content3Vi}</ReactMarkdown>
-          </div>
+          <RichTextContent
+            content={block.content3Vi}
+            className="prose prose-sm max-w-none text-gray-600 leading-[1.88] text-justify hyphens-auto mx-auto"
+          />
         )}
       </div>
     </div>
@@ -410,7 +417,7 @@ export default function NewsPreviewModal({ open, onClose, data }: Props) {
               <svg className="h-12 w-12 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <p className="text-sm text-gray-400">Chưa có nội dung. Hãy thêm block vào tab "Nội dung bài viết".</p>
+              <p className="text-sm text-gray-400">Chưa có nội dung. Hãy thêm block vào tab &quot;Nội dung bài viết&quot;.</p>
             </div>
           )}
         </div>
