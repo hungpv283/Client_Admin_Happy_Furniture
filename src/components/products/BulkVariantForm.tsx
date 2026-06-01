@@ -111,15 +111,12 @@ export default function BulkVariantForm({ productId }: Props) {
 
     setSubmitting(true);
     try {
-      // Pre-upload file images in parallel
       const uploadedUrls: Record<string, string> = {};
       const fileRows = rows.filter((r) => r.imageMode === "file" && r.imageFile);
-      await Promise.all(
-        fileRows.map(async (r) => {
-          const result = await uploadSingleImage(r.imageFile!, "product-variants");
-          uploadedUrls[r.id] = result.imageUrl;
-        })
-      );
+      for (const r of fileRows) {
+        const result = await uploadSingleImage(r.imageFile!, "product-variants");
+        uploadedUrls[r.id] = result.imageUrl;
+      }
 
       await bulkCreateProductVariants({
         productId,
