@@ -1,9 +1,11 @@
 import type { NextConfig } from "next";
+import type { Configuration } from "webpack";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  webpack(config) {
-    config.module.rules.push({
+  // Bắt buộc để Dockerfile chạy được (tạo ra thư mục .next/standalone)
+  output: "standalone",
+  webpack(config: Configuration) {
+    config.module!.rules!.push({
       test: /\.svg$/,
       use: ["@svgr/webpack"],
     });
