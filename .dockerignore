@@ -1,0 +1,28 @@
+# ==============================================================
+#  .dockerignore – Client_Admin_Happy_Furniture (Next.js)
+# ==============================================================
+
+node_modules
+.next
+/out
+/build
+coverage
+
+.env
+.env.*
+!.env.example
+
+# Git
+.git
+.gitignore
+
+# IDE / OS
+.idea
+.vscode
+.DS_Store
+*.pem
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
