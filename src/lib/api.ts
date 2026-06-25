@@ -1,9 +1,10 @@
 import imageCompression from "browser-image-compression";
 
-const BASE_URL = "https://happyfurniture-huexcrecemgaesdy.southeastasia-01.azurewebsites.net/api";
+const BASE_URL =
+  (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5238") + "/api";
 
+// DEV overrides (uncomment if needed):
 // const BASE_URL = "http://localhost:5238/api"
-
 // const BASE_URL = "https://localhost:7290/api"
 
 
